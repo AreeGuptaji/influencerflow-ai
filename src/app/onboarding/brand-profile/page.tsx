@@ -37,7 +37,7 @@ export default function BrandProfilePage() {
 
   const updateProfileMutation = api.user.updateBrandProfile.useMutation({
     onSuccess: () => {
-      router.push("/dashboard");
+      router.push("/campaigns");
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
@@ -202,7 +202,7 @@ export default function BrandProfilePage() {
             <ul className="space-y-2 text-gray-300">
               <li className="flex items-center">
                 <span className="mr-2 text-blue-400">→</span>
-                Access your brand dashboard
+                View your campaigns dashboard
               </li>
               <li className="flex items-center">
                 <span className="mr-2 text-blue-400">→</span>
