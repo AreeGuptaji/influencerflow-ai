@@ -1,15 +1,24 @@
+"use client";
+
 import { api } from "@/trpc/server";
 import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
-export default async function DatabasePage() {
-  const session = await auth();
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
-  // Redirect if not logged in
-  if (!session?.user) {
-    redirect("/api/auth/signin");
-  }
+export default function DatabasePage() {
+  const router = useRouter();
+  const [session, setSession] = useState(null);
 
   // We'll create a mock creators list for now
   const creators = [
@@ -85,6 +94,57 @@ export default async function DatabasePage() {
     "Home",
   ];
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+
+  // Sheet state
+  const [open, setOpen] = useState(false);
+  const [selectedCreator, setSelectedCreator] = useState<any>(null);
+
+  const filteredCreators = creators.filter((creator) => {
+    const matchesSearch = creator.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategories =
+      selectedCategories.length === 0 ||
+      selectedCategories.some((cat) => creator.categories.includes(cat));
+    return matchesSearch && matchesCategories;
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredCreators.slice(
+    indexOfFirstItem,
+    indexOfLastItem,
+  );
+  const totalPages = Math.ceil(filteredCreators.length / itemsPerPage);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
+    );
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Handle row click to open sheet
+  const handleRowClick = (creator: any) => {
+    setSelectedCreator(creator);
+    setOpen(true);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -119,6 +179,8 @@ export default async function DatabasePage() {
               type="text"
               placeholder="Search by username, bio, or keywords..."
               className="w-full rounded-md border border-gray-300 px-4 py-2 pl-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              value={searchTerm}
+              onChange={handleSearchChange}
             />
             <span className="absolute top-1/2 left-3 -translate-y-1/2 transform text-gray-400">
               🔍
@@ -138,10 +200,11 @@ export default async function DatabasePage() {
             <button
               key={category}
               className={`rounded-full px-4 py-2 text-sm ${
-                category === "AI"
+                selectedCategories.includes(category)
                   ? "bg-blue-100 text-blue-800"
                   : "bg-gray-100 text-gray-800"
               }`}
+              onClick={() => handleCategoryClick(category)}
             >
               {category}
             </button>
@@ -209,9 +272,13 @@ export default async function DatabasePage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-            {creators.map((creator) => (
-              <tr key={creator.id} className="hover:bg-gray-50">
-                <td className="px-4 py-4">
+            {currentItems.map((creator) => (
+              <tr
+                key={creator.id}
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => handleRowClick(creator)}
+              >
+                <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-gray-300"
@@ -265,10 +332,93 @@ export default async function DatabasePage() {
                 <td className="px-4 py-4 text-sm text-blue-600">
                   {creator.contact}
                 </td>
-                <td className="px-4 py-4 text-right text-sm">
-                  <button className="text-gray-400 hover:text-gray-600">
-                    &gt;
-                  </button>
+                <td
+                  className="px-4 py-4 text-right text-sm"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Sheet open={open} onOpenChange={setOpen}>
+                    <SheetTrigger asChild>
+                      <button className="text-gray-400 hover:text-gray-600">
+                        &gt;
+                      </button>
+                    </SheetTrigger>
+                    <SheetContent>
+                      <SheetHeader>
+                        <SheetTitle>
+                          {selectedCreator
+                            ? selectedCreator.name
+                            : "Creator Details"}
+                        </SheetTitle>
+                        <SheetDescription>
+                          {selectedCreator && (
+                            <div className="mt-4 flex flex-col gap-4">
+                              <div className="flex items-center gap-4">
+                                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gray-200">
+                                  {/* Replace with <img> or <Image> if needed */}
+                                  <span className="text-2xl text-blue-800">
+                                    {selectedCreator.name.charAt(0)}
+                                  </span>
+                                </div>
+                                <div>
+                                  <div className="text-lg font-semibold">
+                                    {selectedCreator.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {selectedCreator.location}
+                                  </div>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="mb-2">
+                                  <span className="font-medium">
+                                    Followers:
+                                  </span>{" "}
+                                  {selectedCreator.followers.toLocaleString()}
+                                </div>
+                                <div className="mb-2">
+                                  <span className="font-medium">
+                                    Engagement:
+                                  </span>{" "}
+                                  {selectedCreator.engagement ? (
+                                    <span className="text-green-600">
+                                      {selectedCreator.engagement.toFixed(1)}%
+                                    </span>
+                                  ) : (
+                                    "—"
+                                  )}
+                                </div>
+                                <div className="mb-2">
+                                  <span className="font-medium">Views:</span>{" "}
+                                  {selectedCreator.views.toLocaleString()}
+                                </div>
+                                <div className="mb-2">
+                                  <span className="font-medium">
+                                    Categories:
+                                  </span>{" "}
+                                  {selectedCreator.categories.map(
+                                    (cat: string) => (
+                                      <span
+                                        key={cat}
+                                        className="mr-1 inline-block rounded bg-gray-100 px-2 py-1 text-xs"
+                                      >
+                                        {cat}
+                                      </span>
+                                    ),
+                                  )}
+                                </div>
+                                <div className="mb-2">
+                                  <span className="font-medium">Contact:</span>{" "}
+                                  <span className="text-blue-600">
+                                    {selectedCreator.contact}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </SheetDescription>
+                      </SheetHeader>
+                    </SheetContent>
+                  </Sheet>
                 </td>
               </tr>
             ))}
@@ -277,7 +427,22 @@ export default async function DatabasePage() {
       </div>
 
       <div className="mt-4 text-sm text-gray-500">
-        Showing 5 of 1,063 creators
+        Showing {currentItems.length} of {filteredCreators.length} creators
+      </div>
+
+      {/* Pagination */}
+      <div className="mt-4 flex justify-center">
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i + 1}
+            className={`mx-1 rounded px-3 py-1 ${
+              currentPage === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200"
+            }`}
+            onClick={() => handlePageChange(i + 1)}
+          >
+            {i + 1}
+          </button>
+        ))}
       </div>
     </div>
   );
