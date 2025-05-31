@@ -3,9 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/trpc/react";
-import { auth } from "@/server/auth";
-import { redirect } from "next/navigation";
-import { db } from "@/server/db";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -19,9 +16,6 @@ export default function Dashboard() {
       } else if (!user.onboardingComplete) {
         // If onboarding is not complete, redirect to onboarding
         router.push("/onboarding");
-      } else if (user.role === "CREATOR") {
-        // Redirect to creator dashboard
-        router.push("/dashboard/creator");
       } else if (user.role === "BRAND") {
         // Redirect to brand dashboard
         router.push("/dashboard/brand");

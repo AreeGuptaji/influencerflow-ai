@@ -5,20 +5,13 @@ import { useRouter } from "next/navigation";
 import { api } from "@/trpc/react";
 
 export default function OnboardingPage() {
-  const [selectedRole, setSelectedRole] = useState<"CREATOR" | "BRAND" | null>(
-    null,
-  );
+  const [selectedRole, setSelectedRole] = useState<"BRAND" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const setRoleMutation = api.user.setRole.useMutation({
     onSuccess: () => {
-      // Redirect to profile setup based on role
-      if (selectedRole === "CREATOR") {
-        router.push("/onboarding/creator-profile");
-      } else if (selectedRole === "BRAND") {
-        router.push("/onboarding/brand-profile");
-      }
+      router.push("/onboarding/brand-profile");
     },
     onError: (error) => {
       console.error("Error setting role:", error);
@@ -26,10 +19,10 @@ export default function OnboardingPage() {
     },
   });
 
-  const handleRoleSelection = async (role: "CREATOR" | "BRAND") => {
-    setSelectedRole(role);
+  const handleRoleSelection = async () => {
+    setSelectedRole("BRAND");
     setIsLoading(true);
-    setRoleMutation.mutate({ role });
+    setRoleMutation.mutate({ role: "BRAND" });
   };
 
   return (
@@ -40,51 +33,14 @@ export default function OnboardingPage() {
             Welcome to InfluencerFlow AI
           </h1>
           <p className="text-xl text-gray-300">
-            Choose your role to get started with the ultimate AI-powered
-            platform
+            Get started with the ultimate AI-powered platform for brands
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* Creator Option */}
-          <div
-            onClick={() => !isLoading && handleRoleSelection("CREATOR")}
-            className={`cursor-pointer rounded-2xl border border-white/20 bg-white/10 p-8 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-white/20 ${selectedRole === "CREATOR" ? "ring-4 ring-green-400" : ""} ${isLoading ? "cursor-not-allowed opacity-50" : ""} `}
-          >
-            <div className="text-center">
-              <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-violet-500">
-                <span className="text-4xl">🎬</span>
-              </div>
-              <h2 className="mb-4 text-3xl font-bold text-white">Creator</h2>
-              <p className="mb-6 leading-relaxed text-gray-300">
-                I&apos;m a content creator looking to grow my audience, get
-                brand partnerships, and monetize my content with AI-powered
-                insights.
-              </p>
-              <ul className="space-y-2 text-left text-gray-300">
-                <li className="flex items-center">
-                  <span className="mr-2 text-green-400">✓</span>
-                  Growth analytics & insights
-                </li>
-                <li className="flex items-center">
-                  <span className="mr-2 text-green-400">✓</span>
-                  Brand collaboration opportunities
-                </li>
-                <li className="flex items-center">
-                  <span className="mr-2 text-green-400">✓</span>
-                  Content optimization tools
-                </li>
-                <li className="flex items-center">
-                  <span className="mr-2 text-green-400">✓</span>
-                  Campaign management
-                </li>
-              </ul>
-            </div>
-          </div>
-
+        <div className="mx-auto max-w-lg">
           {/* Brand Option */}
           <div
-            onClick={() => !isLoading && handleRoleSelection("BRAND")}
+            onClick={() => !isLoading && handleRoleSelection()}
             className={`cursor-pointer rounded-2xl border border-white/20 bg-white/10 p-8 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-white/20 ${selectedRole === "BRAND" ? "ring-4 ring-blue-400" : ""} ${isLoading ? "cursor-not-allowed opacity-50" : ""} `}
           >
             <div className="text-center">

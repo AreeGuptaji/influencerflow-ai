@@ -16,8 +16,8 @@ datasource db {
 
 // User roles enum
 enum UserRole {
-    CREATOR
     BRAND
+    CREATOR
     ADMIN
 }
 
@@ -81,8 +81,8 @@ model User {
     accounts       Account[]
     sessions       Session[]
     posts          Post[]
-    creatorProfile CreatorProfile?
     brandProfile   BrandProfile?
+    creatorProfile CreatorProfile?
     campaigns      Campaign[]
 }
 
@@ -90,12 +90,16 @@ model CreatorProfile {
     id             String   @id @default(cuid())
     userId         String   @unique
     user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    username       String?
+    email          String?
     bio            String?
-    niches         String[] // JSON array of niches
+    niches         String[] // Content categories/niches
     followerCount  Int?
-    platforms      String[] // Instagram, TikTok, YouTube
+    platforms      String[] // Instagram, TikTok, YouTube, etc.
     location       String?
     engagementRate Float?
+    recentContent  String[] // Array of recent content links
+    contactInfo    String? // Additional contact information
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
