@@ -30,8 +30,6 @@ async function AuthButtons() {
 }
 
 export default async function Home() {
-  const session = await auth();
-
   return (
     <main className="flex min-h-screen flex-col items-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
       {/* Hero Section */}

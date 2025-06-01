@@ -127,7 +127,6 @@ export const creatorRouter = createTRPCRouter({
   // Get all creators (for database page)
   getAll: publicProcedure.query(async ({ ctx }) => {
     try {
-      // Make sure the database connection is valid
       if (!ctx.db?.creatorProfile) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -136,24 +135,7 @@ export const creatorRouter = createTRPCRouter({
       }
 
       // Explicitly select only the fields that exist in the model
-      const creators = await ctx.db.creatorProfile.findMany({
-        select: {
-          id: true,
-
-          username: true,
-          email: true,
-          bio: true,
-          niches: true,
-          followerCount: true,
-          platforms: true,
-          location: true,
-          engagementRate: true,
-          recentContent: true,
-          contactInfo: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+      const creators = await ctx.db.creatorProfile.findMany();
       return creators;
     } catch (error) {
       console.error("Error in creator.getAll:", error);

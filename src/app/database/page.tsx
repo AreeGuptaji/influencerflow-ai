@@ -1,13 +1,13 @@
 "use client";
 
 import { api } from "@/trpc/react";
-import { auth } from "@/server/auth";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { TRPCClientError } from "@trpc/client";
+// import { auth } from "@/server/auth";
+// import { redirect } from "next/navigation";
+// import Link from "next/link";
+// import { TRPCClientError } from "@trpc/client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+
 import {
   Sheet,
   SheetContent,
@@ -18,13 +18,11 @@ import {
 } from "@/components/ui/sheet";
 
 export default function DatabasePage() {
-  const router = useRouter();
-
   // Use a state to store the creators data after fetching
   const [creators, setCreators] = useState<
     Array<{
       id: string;
-
+      name: string;
       username: string | null;
       email: string | null;
       bio: string | null;
@@ -91,7 +89,7 @@ export default function DatabasePage() {
   >(null);
 
   const filteredCreators = creators.filter((creator) => {
-    const matchesSearch = creator.username
+    const matchesSearch = creator.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesCategories =
@@ -319,7 +317,7 @@ export default function DatabasePage() {
                     <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-200">
                       {/* Will replace with actual images later */}
                       <div className="flex h-full w-full items-center justify-center bg-blue-100 text-blue-800">
-                        A
+                        {creator.name[0]}
                       </div>
                     </div>
                     <div className="ml-4">
@@ -378,7 +376,7 @@ export default function DatabasePage() {
                                 <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gray-200">
                                   {/* Replace with <img> or <Image> if needed */}
                                   <span className="text-2xl text-blue-800">
-                                    A
+                                    {selectedCreator.name[0] ?? ""}
                                   </span>
                                 </div>
                                 <div>

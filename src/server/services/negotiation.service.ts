@@ -171,7 +171,7 @@ InfluenceFlow AI
     </ul>
   </div>
   
-  <p>We especially appreciate your content about <strong>${(params.niches || []).join(", ")}</strong> and your engagement rate of <strong>${params.engagementRate || ""}%</strong>.</p>
+  <p>We especially appreciate your content about <strong>${params.niche.join(", ")}</strong> and your engagement rate of <strong>${params.engagementRate || ""}%</strong>.</p>
   
   <p>Are you interested in collaborating with us? Let us know your thoughts by replying to this email.</p>
   
