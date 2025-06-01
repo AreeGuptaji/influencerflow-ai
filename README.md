@@ -1,29 +1,122 @@
-# Create T3 App
+# InfluencerFlow AI Platform
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+InfluencerFlow AI is a cutting-edge influencer marketing platform that helps brands discover, negotiate with, and manage creator relationships through AI-powered tools. Our key differentiator is the AI voice negotiation system that automates deal-making.
 
-## What's next? How do I make an app with this?
+## 🚀 Core Features
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- **AI-powered Creator Database:** Find the perfect creators for your campaigns
+- **Campaign Management:** Create and manage influencer campaigns
+- **Voice & Text Negotiation:** AI agents negotiate with creators on your behalf
+- **Contract Generation:** Automated contracts from negotiated terms
+- **Payment Processing:** Secure, milestone-based payments
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## 📋 Project Specifications
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+Detailed specifications for each feature can be found in the `specs` directory:
 
-## Learn More
+- [Implementation Plan](specs/00-implementation-plan.md)
+- [AI Matching System](specs/01-ai-matching.md)
+- [Negotiation System](specs/02-negotiation-system.md)
+- [Contract Generation](specs/03-contract-generation.md)
+- [Payment Processing](specs/04-payment-processing.md)
+- [Database Schema Updates](specs/05-database-schema-updates.md)
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+## 💻 Tech Stack
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+- **Frontend:** Next.js, TypeScript, Tailwind CSS
+- **Backend:** tRPC, Prisma, PostgreSQL
+- **Authentication:** Next-Auth
+- **AI/Voice:** OpenAI GPT-4, ElevenLabs, OpenAI Whisper
+- **Payments:** Stripe
+- **Docs:** React-PDF
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+## 🏗️ Project Structure
 
-## How do I deploy this?
+```
+src/
+├── app/                 # Next.js App Router
+│   ├── api/             # API endpoints
+│   ├── _components/     # Shared UI components
+│   ├── database/        # Creator database view
+│   ├── campaigns/       # Campaign management
+│   │   ├── [id]/        # Individual campaign view
+│   │   ├── create/      # Campaign creation
+│   │   └── negotiate/   # Voice negotiation interface
+│   ├── layout.tsx       # Main layout with navigation
+│   └── page.tsx         # Landing page
+├── components/          # UI components (shadcn/ui)
+├── lib/                 # Utility functions
+├── server/              # Server-side code
+│   ├── api/             # API route handlers
+│   ├── auth.ts          # Authentication setup
+│   └── db.ts            # Database client
+└── trpc/                # tRPC setup and routers
+```
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- PostgreSQL database
+
+### Installation
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/yourusername/influenceflowai.git
+cd influenceflowai
+```
+
+2. Install dependencies
+
+```bash
+npm install
+```
+
+3. Set up your environment variables
+
+```bash
+cp .env.example .env
+# Edit .env with your database and API credentials
+```
+
+4. Start the database
+
+```bash
+./start-database.sh
+```
+
+5. Run migrations and seed the database
+
+```bash
+npx prisma migrate dev
+npx prisma db seed
+```
+
+6. Start the development server
+
+```bash
+npm run dev
+```
+
+## 🧪 Development Approach
+
+We follow a phased implementation approach:
+
+1. **Phase 1:** Core Infrastructure & API Development
+2. **Phase 2:** AI Matching System
+3. **Phase 3:** Negotiation System (Text & Voice)
+4. **Phase 4:** Contract & Payment Systems
+5. **Phase 5:** Testing & Refinement
+
+See the [Implementation Plan](specs/00-implementation-plan.md) for detailed timelines.
+
+## 🤝 Contributing
+
+Please read our [Contributing Guide](CONTRIBUTING.md) before submitting changes.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
