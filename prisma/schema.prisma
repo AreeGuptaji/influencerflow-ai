@@ -63,6 +63,14 @@ enum MessageType {
     // Future: AUDIO_TRANSCRIPT
 }
 
+// Contract status enum
+enum ContractStatus {
+    DRAFT
+    SENT
+    SIGNED
+    CANCELED
+}
+
 model Post {
     id          Int      @id @default(autoincrement())
     name        String
@@ -169,6 +177,7 @@ model Campaign {
     updatedAt    DateTime       @updatedAt
     brand        User           @relation(fields: [brandId], references: [id], onDelete: Cascade)
     Negotiation  Negotiation[]
+    Contract     Contract[]
 
     @@index([status])
     @@index([brandId])
@@ -189,6 +198,7 @@ model Negotiation {
     terms         DealTerms?
     messages      Message[]
     campaign      Campaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+    Contract      Contract?
 
     @@index([campaignId])
     @@index([creatorId])
@@ -219,6 +229,47 @@ model DealTerms {
     revisions     Int         @default(0)
     approvedAt    DateTime?
     negotiation   Negotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
+}
+
+model Contract {
+    id              String         @id @default(cuid())
+    campaignId      String
+    creatorId       String
+    negotiationId   String?        @unique
+    status          ContractStatus @default(DRAFT)
+    content         String // Full contract content
+    version         Int            @default(1)
+    signedByBrand   Boolean        @default(false)
+    signedByCreator Boolean        @default(false)
+    brandSignedAt   DateTime?
+    creatorSignedAt DateTime?
+    pdfUrl          String?
+    createdAt       DateTime       @default(now())
+    updatedAt       DateTime       @updatedAt
+
+    campaign    Campaign     @relation(fields: [campaignId], references: [id])
+    negotiation Negotiation? @relation(fields: [negotiationId], references: [id])
+}
+
+model ContractTemplate {
+    id          String   @id @default(cuid())
+    name        String
+    description String
+    content     String
+    variables   String[] // Variables that can be substituted
+    isDefault   Boolean  @default(false)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+}
+
+model ContractClause {
+    id         String   @id @default(cuid())
+    name       String
+    category   String // e.g., "payment", "deliverables", "rights"
+    content    String
+    isRequired Boolean  @default(false)
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
 }
 
 model VerificationToken {

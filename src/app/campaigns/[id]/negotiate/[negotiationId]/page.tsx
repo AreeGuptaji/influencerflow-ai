@@ -9,6 +9,7 @@ import type { Session } from "next-auth";
 import NegotiationConversation from "./components/NegotiationConversation";
 import NegotiationTermsPanel from "./components/NegotiationTermsPanel";
 import NegotiationParametersPanel from "./components/NegotiationParametersPanel";
+import ContractPanel from "./components/ContractPanel";
 
 // Define types for the negotiation data
 interface Message {
@@ -183,6 +184,16 @@ export default async function NegotiationPage({
             >
               Creator Parameters
             </Link>
+            <Link
+              href={`/campaigns/${id}/negotiate/${negotiationId}?view=contract`}
+              className={`border-b-2 px-1 pb-4 text-sm font-medium ${
+                view === "contract"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
+              Contract
+            </Link>
           </nav>
         </div>
 
@@ -207,6 +218,14 @@ export default async function NegotiationPage({
           <NegotiationParametersPanel
             negotiation={typedNegotiation}
             campaignId={id}
+          />
+        )}
+
+        {view === "contract" && (
+          <ContractPanel
+            negotiationId={negotiationId}
+            campaignId={id}
+            status={typedNegotiation.status}
           />
         )}
       </div>
