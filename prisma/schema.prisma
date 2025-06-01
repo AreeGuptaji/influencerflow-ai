@@ -29,14 +29,47 @@ enum CampaignStatus {
     COMPLETED
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+// Negotiation System
+enum NegotiationStatus {
+    PENDING_OUTREACH
+    OUTREACH_SENT
+    IN_PROGRESS
+    TERMS_PROPOSED
+    AGREED
+    REJECTED
+    FAILED
+    DONE
+}
 
-    createdBy   User   @relation(fields: [createdById], references: [id])
+enum CommunicationChannel {
+    EMAIL
+    // Future: DM, VOICE_LOG, TEXT_LOG
+}
+
+enum AIMode {
+    AUTONOMOUS
+    ASSISTED
+}
+
+enum MessageSender {
+    BRAND_AI
+    BRAND_MANUAL
+    CREATOR
+}
+
+enum MessageType {
+    TEXT // For general content, could be email plain text
+    EMAIL_HTML // For HTML email content
+    // Future: AUDIO_TRANSCRIPT
+}
+
+model Post {
+    id          Int      @id @default(autoincrement())
+    name        String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
     createdById String
+    createdBy   User     @relation(fields: [createdById], references: [id])
 
     @@index([name])
 }
@@ -70,26 +103,24 @@ model Session {
 }
 
 model User {
-    id                 String    @id @default(cuid())
+    id                 String        @id @default(cuid())
     name               String?
-    email              String?   @unique
+    email              String?       @unique
     emailVerified      DateTime?
     image              String?
+    onboardingComplete Boolean       @default(false)
     role               UserRole?
-    onboardingComplete Boolean   @default(false)
-
-    accounts       Account[]
-    sessions       Session[]
-    posts          Post[]
-    brandProfile   BrandProfile?
-    creatorProfile CreatorProfile?
-    campaigns      Campaign[]
+    creatorProfileId   String?
+    accounts           Account[]
+    brandProfile       BrandProfile?
+    campaigns          Campaign[]
+    posts              Post[]
+    sessions           Session[]
 }
 
 model CreatorProfile {
     id             String   @id @default(cuid())
-    userId         String   @unique
-    user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    name           String
     username       String?
     email          String?
     bio            String?
@@ -126,19 +157,65 @@ model Campaign {
     startDate    DateTime
     endDate      DateTime
     status       CampaignStatus @default(DRAFT)
-    niches       String[] // Target niches
+    niches       String[]
     location     String?
     minFollowers Int?
     maxFollowers Int?
-
-    brandId String
-    brand   User   @relation(fields: [brandId], references: [id], onDelete: Cascade)
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    brandId      String
+    createdAt    DateTime       @default(now())
+    updatedAt    DateTime       @updatedAt
+    brand        User           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+    Negotiation  Negotiation[]
 
     @@index([status])
     @@index([brandId])
+}
+
+model Negotiation {
+    id            String               @id @default(cuid())
+    campaignId    String
+    creatorId     String
+    creatorEmail  String
+    status        NegotiationStatus    @default(PENDING_OUTREACH)
+    channel       CommunicationChannel @default(EMAIL)
+    aiMode        AIMode               @default(AUTONOMOUS)
+    parameters    Json
+    emailThreadId String?              @unique
+    createdAt     DateTime             @default(now())
+    updatedAt     DateTime             @updatedAt
+    terms         DealTerms?
+    messages      Message[]
+    campaign      Campaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    @@index([campaignId])
+    @@index([creatorId])
+    @@index([status])
+    @@index([creatorEmail])
+}
+
+model Message {
+    id            String        @id @default(cuid())
+    negotiationId String
+    sender        MessageSender
+    content       String
+    contentType   MessageType   @default(TEXT)
+    emailMetadata Json?
+    timestamp     DateTime      @default(now())
+    negotiation   Negotiation   @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
+
+    @@index([negotiationId])
+}
+
+model DealTerms {
+    id            String      @id @default(cuid())
+    negotiationId String      @unique
+    fee           Float
+    deliverables  String[]
+    timeline      Json
+    requirements  String[]
+    revisions     Int         @default(0)
+    approvedAt    DateTime?
+    negotiation   Negotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

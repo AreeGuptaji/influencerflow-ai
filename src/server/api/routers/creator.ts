@@ -1,7 +1,12 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "@/server/api/trpc";
 
 export const creatorRouter = createTRPCRouter({
   // Find creators that match a campaign's criteria
@@ -119,9 +124,45 @@ export const creatorRouter = createTRPCRouter({
       return creatorsWithScore.sort((a, b) => b.matchScore - a.matchScore);
     }),
 
-  // Get all creators (for admin purposes)
-  getAll: protectedProcedure.query(async ({ ctx }) => {
-    return await ctx.db.creatorProfile.findMany();
+  // Get all creators (for database page)
+  getAll: publicProcedure.query(async ({ ctx }) => {
+    try {
+      // Make sure the database connection is valid
+      if (!ctx.db?.creatorProfile) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database connection issue",
+        });
+      }
+
+      // Explicitly select only the fields that exist in the model
+      const creators = await ctx.db.creatorProfile.findMany({
+        select: {
+          id: true,
+
+          username: true,
+          email: true,
+          bio: true,
+          niches: true,
+          followerCount: true,
+          platforms: true,
+          location: true,
+          engagementRate: true,
+          recentContent: true,
+          contactInfo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      return creators;
+    } catch (error) {
+      console.error("Error in creator.getAll:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch creators",
+      });
+    }
   }),
 
   // Get a single creator profile

@@ -1,9 +1,10 @@
 "use client";
 
-import { api } from "@/trpc/server";
+import { api } from "@/trpc/react";
 import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { TRPCClientError } from "@trpc/client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,66 +19,50 @@ import {
 
 export default function DatabasePage() {
   const router = useRouter();
-  const [session, setSession] = useState(null);
 
-  // We'll create a mock creators list for now
-  const creators = [
-    {
-      id: "1",
-      name: "Intellipaat",
-      followers: 11100000,
-      engagement: 2.0,
-      views: 6485,
-      categories: ["AI"],
-      location: "IN",
-      contact: "sales@intellipaat.com",
-      image: "/creators/intellipaat.jpg",
-    },
-    {
-      id: "2",
-      name: "CodeWithHarry",
-      followers: 6820000,
-      engagement: 6.0,
-      views: 49759,
-      categories: ["AI"],
-      location: "IN",
-      contact: "harry@codewithharry.com",
-      image: "/creators/codewithharry.jpg",
-    },
-    {
-      id: "3",
-      name: "Marques Brownlee",
-      followers: 6251743,
-      engagement: null,
-      views: 17223782,
-      categories: ["Tech", "AI"],
-      location: "NYC",
-      contact: "DM Only",
-      image: "/creators/mkbhd.jpg",
-    },
-    {
-      id: "4",
-      name: "Apna College",
-      followers: 6110000,
-      engagement: 5.0,
-      views: 18080,
-      categories: ["AI"],
-      location: "—",
-      contact: "apnacollege.ak@gmail.com",
-      image: "/creators/apnacollege.jpg",
-    },
-    {
-      id: "5",
-      name: "Matty McTech",
-      followers: 5200000,
-      engagement: 10.0,
-      views: 108450,
-      categories: ["Lifestyle", "Tech"],
-      location: "US",
-      contact: "setupspawn@gmail.com",
-      image: "/creators/mattymctech.jpg",
-    },
-  ];
+  // Use a state to store the creators data after fetching
+  const [creators, setCreators] = useState<
+    Array<{
+      id: string;
+
+      username: string | null;
+      email: string | null;
+      bio: string | null;
+      niches: string[];
+      followerCount: number | null;
+      platforms: string[];
+      location: string | null;
+      engagementRate: number | null;
+      recentContent: string[];
+      contactInfo: string | null;
+    }>
+  >([]);
+
+  // Fetch creators data with React Query with error handling
+  const creatorsQuery = api.creator.getAll.useQuery();
+
+  // Log any errors for debugging
+  useEffect(() => {
+    if (creatorsQuery.error) {
+      console.error("Error fetching creators:", creatorsQuery.error);
+    }
+  }, [creatorsQuery]);
+
+  // Update creators state when data is available
+  useEffect(() => {
+    if (creatorsQuery.data) {
+      // Transform the data to match the expected format in the component
+      const formattedCreators = creatorsQuery.data.map((creator) => ({
+        ...creator,
+        followers: creator.followerCount ?? 0,
+        engagement: creator.engagementRate ?? 0,
+        views: 0, // This field isn't in the schema, so defaulting to 0
+        categories: creator.niches,
+        // contact: creator.email ?? creator.contactInfo ?? "No contact",
+      }));
+      setCreators(formattedCreators);
+    }
+  }, [creatorsQuery.data]);
 
   // Temporary placeholder for category filter buttons
   const categories = [
@@ -101,15 +86,17 @@ export default function DatabasePage() {
 
   // Sheet state
   const [open, setOpen] = useState(false);
-  const [selectedCreator, setSelectedCreator] = useState<any>(null);
+  const [selectedCreator, setSelectedCreator] = useState<
+    (typeof creators)[0] | null
+  >(null);
 
   const filteredCreators = creators.filter((creator) => {
-    const matchesSearch = creator.name
+    const matchesSearch = creator.username
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesCategories =
       selectedCategories.length === 0 ||
-      selectedCategories.some((cat) => creator.categories.includes(cat));
+      selectedCategories.some((cat) => creator.niches.includes(cat));
     return matchesSearch && matchesCategories;
   });
 
@@ -140,10 +127,53 @@ export default function DatabasePage() {
   };
 
   // Handle row click to open sheet
-  const handleRowClick = (creator: any) => {
+  const handleRowClick = (creator: (typeof creators)[0]) => {
     setSelectedCreator(creator);
     setOpen(true);
   };
+
+  // Render error handling UI if there's an error
+  if (creatorsQuery.error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="rounded-md bg-red-50 p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Error loading creators
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                {creatorsQuery.error.message}
+              </div>
+              <div className="mt-2 text-xs text-red-700">
+                <pre>{JSON.stringify(creatorsQuery.error, null, 2)}</pre>
+              </div>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => creatorsQuery.refetch()}
+                  className="rounded-md bg-red-100 px-3 py-2 text-sm font-medium text-red-800 hover:bg-red-200"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading indicator
+  if (creatorsQuery.isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <p className="text-gray-500">Loading creators data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -274,7 +304,7 @@ export default function DatabasePage() {
           <tbody className="divide-y divide-gray-200 bg-white">
             {currentItems.map((creator) => (
               <tr
-                key={creator.id}
+                key={creator.username}
                 className="cursor-pointer hover:bg-gray-50"
                 onClick={() => handleRowClick(creator)}
               >
@@ -289,34 +319,26 @@ export default function DatabasePage() {
                     <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-200">
                       {/* Will replace with actual images later */}
                       <div className="flex h-full w-full items-center justify-center bg-blue-100 text-blue-800">
-                        {creator.name.charAt(0)}
+                        A
                       </div>
                     </div>
                     <div className="ml-4">
                       <div className="font-medium text-gray-900">
-                        {creator.name}
+                        {creator.name ?? "Jackson"}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-4 text-sm text-gray-900">
-                  {creator.followers.toLocaleString()}
+                  {(creator.followerCount ?? 0).toLocaleString()}
                 </td>
                 <td className="px-4 py-4 text-sm text-gray-900">
-                  {creator.engagement ? (
-                    <span className="text-green-600">
-                      {creator.engagement.toFixed(1)}%
-                    </span>
-                  ) : (
-                    "—"
-                  )}
+                  {creator.engagementRate}
                 </td>
-                <td className="px-4 py-4 text-sm text-gray-900">
-                  {creator.views.toLocaleString()}
-                </td>
+                <td className="px-4 py-4 text-sm text-gray-900">{200}</td>
                 <td className="px-4 py-4 text-sm text-gray-900">
                   <div className="flex flex-wrap gap-1">
-                    {creator.categories.map((category) => (
+                    {creator.niches.map((category: string) => (
                       <span
                         key={category}
                         className="rounded bg-gray-100 px-2 py-1 text-xs"
@@ -330,7 +352,7 @@ export default function DatabasePage() {
                   {creator.location}
                 </td>
                 <td className="px-4 py-4 text-sm text-blue-600">
-                  {creator.contact}
+                  {creator.email}
                 </td>
                 <td
                   className="px-4 py-4 text-right text-sm"
@@ -356,7 +378,7 @@ export default function DatabasePage() {
                                 <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gray-200">
                                   {/* Replace with <img> or <Image> if needed */}
                                   <span className="text-2xl text-blue-800">
-                                    {selectedCreator.name.charAt(0)}
+                                    A
                                   </span>
                                 </div>
                                 <div>
@@ -373,43 +395,35 @@ export default function DatabasePage() {
                                   <span className="font-medium">
                                     Followers:
                                   </span>{" "}
-                                  {selectedCreator.followers.toLocaleString()}
+                                  {selectedCreator.followerCount}
                                 </div>
                                 <div className="mb-2">
                                   <span className="font-medium">
                                     Engagement:
                                   </span>{" "}
-                                  {selectedCreator.engagement ? (
-                                    <span className="text-green-600">
-                                      {selectedCreator.engagement.toFixed(1)}%
-                                    </span>
-                                  ) : (
-                                    "—"
-                                  )}
+                                  {selectedCreator.engagementRate}
                                 </div>
                                 <div className="mb-2">
                                   <span className="font-medium">Views:</span>{" "}
-                                  {selectedCreator.views.toLocaleString()}
+                                  {200}
                                 </div>
                                 <div className="mb-2">
                                   <span className="font-medium">
                                     Categories:
                                   </span>{" "}
-                                  {selectedCreator.categories.map(
-                                    (cat: string) => (
-                                      <span
-                                        key={cat}
-                                        className="mr-1 inline-block rounded bg-gray-100 px-2 py-1 text-xs"
-                                      >
-                                        {cat}
-                                      </span>
-                                    ),
-                                  )}
+                                  {selectedCreator.niches.map((cat: string) => (
+                                    <span
+                                      key={cat}
+                                      className="mr-1 inline-block rounded bg-gray-100 px-2 py-1 text-xs"
+                                    >
+                                      {cat}
+                                    </span>
+                                  ))}
                                 </div>
                                 <div className="mb-2">
                                   <span className="font-medium">Contact:</span>{" "}
                                   <span className="text-blue-600">
-                                    {selectedCreator.contact}
+                                    {selectedCreator.email}
                                   </span>
                                 </div>
                               </div>

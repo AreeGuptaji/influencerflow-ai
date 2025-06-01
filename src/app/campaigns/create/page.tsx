@@ -1,13 +1,107 @@
+"use client";
 import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { api } from "@/trpc/react";
 
-export default async function CreateCampaignPage() {
-  const session = await auth();
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-  // Redirect if not logged in
-  if (!session?.user) {
-    redirect("/api/auth/signin");
+// Campaign schema for reference:
+// title: string
+// description: string
+// budget: number
+// startDate: Date
+// endDate: Date
+// niches: string[]
+// location?: string
+// minFollowers?: number
+// maxFollowers?: number
+
+export default function CreateCampaignPage() {
+  const router = useRouter();
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    budget: "",
+    startDate: "",
+    endDate: "",
+    niches: [] as string[],
+    location: "",
+    minFollowers: "",
+    maxFollowers: "",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const utils = api.useUtils();
+  const mutation = api.campaign.create.useMutation({
+    onSuccess: async () => {
+      await utils.campaign.invalidate();
+      router.push("/campaigns");
+    },
+  });
+
+  function handleChange(
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) {
+    const { name, value, type } = e.target;
+
+    if (type === "select-multiple") {
+      const selectElement = e.target as HTMLSelectElement;
+      const selected: string[] = [];
+
+      for (const option of Array.from(selectElement.options)) {
+        if (option.selected) selected.push(option.value);
+      }
+
+      setForm((f) => ({ ...f, [name]: selected }));
+    } else {
+      setForm((f) => ({ ...f, [name]: value }));
+    }
+  }
+
+  function handleNumberChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+
+    // Validate and transform data for schema
+    try {
+      if (!form.title.trim()) throw new Error("Title is required");
+      if (!form.description || form.description.length < 10)
+        throw new Error("Description must be at least 10 characters");
+      if (!form.budget || isNaN(Number(form.budget)) || Number(form.budget) < 1)
+        throw new Error("Budget must be at least $1");
+      if (!form.startDate) throw new Error("Start date is required");
+      if (!form.endDate) throw new Error("End date is required");
+      if (!form.niches.length)
+        throw new Error("At least one niche is required");
+
+      const payload = {
+        title: form.title,
+        description: form.description,
+
+        budget: Number(form.budget),
+        startDate: new Date(form.startDate),
+        endDate: new Date(form.endDate),
+        niches: form.niches,
+        location: form.location || undefined,
+        minFollowers: form.minFollowers ? Number(form.minFollowers) : undefined,
+        maxFollowers: form.maxFollowers ? Number(form.maxFollowers) : undefined,
+      };
+
+      mutation.mutate(payload);
+    } catch (err) {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -29,7 +123,7 @@ export default async function CreateCampaignPage() {
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <form className="space-y-6">
+        <form className="space-y-6" onSubmit={handleSubmit}>
           {/* Campaign Details Section */}
           <div>
             <h2 className="mb-4 text-xl font-semibold">Campaign Details</h2>
@@ -45,6 +139,8 @@ export default async function CreateCampaignPage() {
                   type="text"
                   id="title"
                   name="title"
+                  value={form.title}
+                  onChange={handleChange}
                   placeholder="e.g. Summer Product Launch"
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   required
@@ -62,8 +158,10 @@ export default async function CreateCampaignPage() {
                   type="number"
                   id="budget"
                   name="budget"
+                  value={form.budget}
+                  onChange={handleNumberChange}
                   placeholder="5000"
-                  min="0"
+                  min="1"
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   required
                 />
@@ -80,6 +178,8 @@ export default async function CreateCampaignPage() {
                   type="date"
                   id="startDate"
                   name="startDate"
+                  value={form.startDate}
+                  onChange={handleChange}
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   required
                 />
@@ -96,6 +196,8 @@ export default async function CreateCampaignPage() {
                   type="date"
                   id="endDate"
                   name="endDate"
+                  value={form.endDate}
+                  onChange={handleChange}
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   required
                 />
@@ -111,6 +213,8 @@ export default async function CreateCampaignPage() {
                 <textarea
                   id="description"
                   name="description"
+                  value={form.description}
+                  onChange={handleChange}
                   rows={4}
                   placeholder="Describe your campaign goals, products, and what you're looking for from creators..."
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
@@ -135,6 +239,8 @@ export default async function CreateCampaignPage() {
                   id="niches"
                   name="niches"
                   multiple
+                  value={form.niches}
+                  onChange={handleChange}
                   className="h-32 w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   required
                 >
@@ -165,6 +271,8 @@ export default async function CreateCampaignPage() {
                 <select
                   id="location"
                   name="location"
+                  value={form.location}
+                  onChange={handleChange}
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
                   <option value="">Any Location</option>
@@ -187,6 +295,8 @@ export default async function CreateCampaignPage() {
                   type="number"
                   id="minFollowers"
                   name="minFollowers"
+                  value={form.minFollowers}
+                  onChange={handleNumberChange}
                   placeholder="10000"
                   min="0"
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
@@ -204,6 +314,8 @@ export default async function CreateCampaignPage() {
                   type="number"
                   id="maxFollowers"
                   name="maxFollowers"
+                  value={form.maxFollowers}
+                  onChange={handleNumberChange}
                   placeholder="1000000"
                   min="0"
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
@@ -227,6 +339,7 @@ export default async function CreateCampaignPage() {
                 id="enableVoice"
                 name="enableVoice"
                 className="h-4 w-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                disabled
               />
               <label
                 htmlFor="enableVoice"
@@ -247,11 +360,17 @@ export default async function CreateCampaignPage() {
             </Link>
             <button
               type="submit"
-              className="rounded-md bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-2 text-sm font-medium text-white hover:from-blue-600 hover:to-purple-700"
+              disabled={submitting}
+              className="rounded-md bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-2 text-sm font-medium text-white hover:from-blue-600 hover:to-purple-700 disabled:opacity-60"
             >
-              Create Campaign
+              {submitting ? "Creating..." : "Create Campaign"}
             </button>
           </div>
+          {error && (
+            <div className="mt-4 rounded bg-red-100 px-4 py-2 text-red-700">
+              {error}
+            </div>
+          )}
         </form>
       </div>
     </div>

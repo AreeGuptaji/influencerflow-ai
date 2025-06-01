@@ -1,6 +1,5 @@
 import { auth } from "@/server/auth";
 import Link from "next/link";
-import Image from "next/image";
 
 async function AuthButtons() {
   const session = await auth();
