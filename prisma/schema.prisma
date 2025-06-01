@@ -103,16 +103,17 @@ model Session {
 }
 
 model User {
-    id                 String        @id @default(cuid())
+    id                 String          @id @default(cuid())
     name               String?
-    email              String?       @unique
+    email              String?         @unique
     emailVerified      DateTime?
     image              String?
-    onboardingComplete Boolean       @default(false)
+    onboardingComplete Boolean         @default(false)
     role               UserRole?
     creatorProfileId   String?
     accounts           Account[]
     brandProfile       BrandProfile?
+    creatorProfile     CreatorProfile?
     campaigns          Campaign[]
     posts              Post[]
     sessions           Session[]
@@ -120,6 +121,8 @@ model User {
 
 model CreatorProfile {
     id             String   @id @default(cuid())
+    userId         String?  @unique
+    user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
     name           String
     username       String?
     email          String?

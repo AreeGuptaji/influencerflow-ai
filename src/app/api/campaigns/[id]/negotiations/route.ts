@@ -21,93 +21,94 @@ const createNegotiationSchema = z.object({
 });
 
 export async function POST(
-  req: NextRequest,
+  request: Request,
   { params }: { params: { id: string } },
 ) {
   try {
     const session = await auth();
 
-    // Check authentication
+    // Check if user is authenticated
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get campaign to verify ownership
+    const campaignId = params.id;
+
+    // Check if campaign exists and belongs to the user
     const campaign = await db.campaign.findUnique({
       where: {
-        id: params.id,
+        id: campaignId,
         brandId: session.user.id,
       },
     });
 
     if (!campaign) {
       return NextResponse.json(
-        { error: "Campaign not found or you don't have access" },
+        {
+          error: "Campaign not found or you don't have permission to modify it",
+        },
         { status: 404 },
       );
     }
 
-    // Parse and validate request body
-    const body = await req.json();
-    const validationResult = createNegotiationSchema.safeParse(body);
+    // Parse request body
+    const body = await request.json();
+    const { creatorId, creatorEmail, parameters, aiMode = "AUTONOMOUS" } = body;
 
-    if (!validationResult.success) {
+    // Validate required fields
+    if (!creatorId) {
       return NextResponse.json(
-        {
-          error: "Invalid request data",
-          details: validationResult.error.format(),
-        },
+        { error: "Creator ID is required" },
         { status: 400 },
       );
     }
 
-    const { creatorEmail, parameters, aiMode } = validationResult.data;
+    if (!creatorEmail) {
+      return NextResponse.json(
+        { error: "Creator email is required" },
+        { status: 400 },
+      );
+    }
 
-    // Check if a negotiation already exists for this creator email and campaign
+    // Check if negotiation already exists for this campaign and creator
     const existingNegotiation = await db.negotiation.findFirst({
       where: {
-        campaignId: campaign.id,
-        creatorEmail: creatorEmail,
+        campaignId,
+        creatorId,
       },
     });
 
     if (existingNegotiation) {
       return NextResponse.json(
         {
-          message: "Negotiation already exists with this creator",
+          error: "A negotiation with this creator already exists",
           negotiationId: existingNegotiation.id,
         },
-        { status: 200 },
+        { status: 409 },
       );
     }
 
-    // Create the negotiation
+    // Create a new negotiation
     const negotiation = await db.negotiation.create({
       data: {
-        campaignId: campaign.id,
-        creatorId: `creator-${Date.now()}`, // Generate a placeholder ID
-        creatorEmail: creatorEmail,
+        campaignId,
+        creatorId,
+        creatorEmail,
         status: NegotiationStatus.PENDING_OUTREACH,
-        channel: CommunicationChannel.EMAIL,
-        aiMode: aiMode,
-        parameters: parameters,
+        aiMode: aiMode as AIMode,
+        parameters: parameters || {},
       },
     });
 
-    // In a full implementation, you would trigger the initial outreach email here
-    // For now, we'll just simulate that the outreach is pending
-
-    return NextResponse.json(
-      {
-        message: "Negotiation created successfully",
-        negotiationId: negotiation.id,
-      },
-      { status: 201 },
-    );
+    return NextResponse.json({
+      message: "Creator added to campaign",
+      negotiationId: negotiation.id,
+      creatorId: negotiation.creatorId,
+    });
   } catch (error) {
-    console.error("Error creating negotiation:", error);
+    console.error("Error adding creator to campaign:", error);
     return NextResponse.json(
-      { error: "Failed to create negotiation" },
+      { error: "Failed to add creator to campaign" },
       { status: 500 },
     );
   }

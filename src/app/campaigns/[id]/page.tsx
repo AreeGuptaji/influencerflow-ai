@@ -480,7 +480,7 @@ export default async function CampaignDetailPage({
                     <td className="px-4 py-4 text-sm">
                       {creator.status === "Matched" && (
                         <Link
-                          href={`/campaigns/${campaign.id}/negotiate/${creator.id}`}
+                          href={`/campaigns/${campaign.id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}`}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           Start Negotiation
@@ -488,7 +488,7 @@ export default async function CampaignDetailPage({
                       )}
                       {creator.status === "Negotiating" && (
                         <Link
-                          href={`/campaigns/${campaign.id}/negotiate/${creator.id}`}
+                          href={`/campaigns/${campaign.id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}`}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           View Conversation
@@ -496,7 +496,7 @@ export default async function CampaignDetailPage({
                       )}
                       {creator.status === "Contracted" && (
                         <Link
-                          href={`/campaigns/${campaign.id}/negotiate/${creator.id}?view=contract`}
+                          href={`/campaigns/${campaign.id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}?view=contract`}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           View Contract

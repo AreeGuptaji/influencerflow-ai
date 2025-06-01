@@ -15,6 +15,7 @@ export async function POST(
 ) {
   try {
     const session = await auth();
+    const { id, negotiationId } = params;
 
     // Check authentication
     if (!session?.user) {
@@ -24,7 +25,7 @@ export async function POST(
     // Get negotiation to verify access
     const negotiation = await db.negotiation.findUnique({
       where: {
-        id: params.negotiationId,
+        id: negotiationId,
       },
       include: {
         campaign: {
