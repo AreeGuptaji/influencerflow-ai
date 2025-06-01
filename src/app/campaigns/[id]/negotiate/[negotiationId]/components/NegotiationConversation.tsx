@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { MessageSender, NegotiationStatus } from "@prisma/client";
+import SendMessageForm from "./SendMessageForm";
 
 interface Message {
   id: string;
@@ -11,7 +12,7 @@ interface Message {
   content: string;
   contentType: string;
   timestamp: Date;
-  emailMetadata?: any;
+  emailMetadata?: Record<string, unknown>;
 }
 
 interface Negotiation {
@@ -29,43 +30,17 @@ export default function NegotiationConversation({
   negotiation: Negotiation;
   campaignId: string;
 }) {
-  const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const router = useRouter();
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim()) return;
+  // Auto-scroll to bottom of messages on update
+  const [messagesRef, setMessagesRef] = useState<HTMLDivElement | null>(null);
 
-    setIsSending(true);
-    try {
-      const response = await fetch(
-        `/api/campaigns/${campaignId}/negotiations/${negotiation.id}/messages`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            content: message,
-            sender: "BRAND_MANUAL",
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-
-      setMessage("");
-      router.refresh();
-    } catch (error) {
-      console.error("Error sending message:", error);
-      alert("Failed to send message. Please try again.");
-    } finally {
-      setIsSending(false);
+  useEffect(() => {
+    if (messagesRef) {
+      messagesRef.scrollTop = messagesRef.scrollHeight;
     }
-  };
+  }, [negotiation.messages, messagesRef]);
 
   const handleToggleAIMode = async () => {
     try {
@@ -92,6 +67,39 @@ export default function NegotiationConversation({
     } catch (error) {
       console.error("Error changing AI mode:", error);
       alert("Failed to change AI mode. Please try again.");
+    }
+  };
+
+  const handleInitiateOutreach = async () => {
+    if (negotiation.status !== "PENDING_OUTREACH") {
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const response = await fetch(
+        `/api/campaigns/${campaignId}/negotiations/${negotiation.id}/outreach`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error ?? "Failed to initiate outreach");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error initiating outreach:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to initiate outreach",
+      );
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -137,15 +145,27 @@ export default function NegotiationConversation({
       </div>
 
       {/* Message List */}
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      <div
+        ref={setMessagesRef}
+        className="flex-1 space-y-4 overflow-y-auto p-4"
+      >
         {negotiation.messages.length === 0 ? (
-          <div className="py-8 text-center text-gray-500">
+          <div className="flex flex-col items-center justify-center py-8 text-center text-gray-500">
             <p>No messages yet.</p>
-            <p className="mt-2 text-sm">
-              {negotiation.status === "PENDING_OUTREACH"
-                ? "Send the first message to start the negotiation."
-                : "Waiting for responses..."}
-            </p>
+            {negotiation.status === "PENDING_OUTREACH" && (
+              <>
+                <p className="mt-2 text-sm">
+                  Send the first message to start the negotiation.
+                </p>
+                <button
+                  onClick={handleInitiateOutreach}
+                  disabled={isSending}
+                  className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-blue-300"
+                >
+                  {isSending ? "Sending..." : "Send Initial Outreach"}
+                </button>
+              </>
+            )}
           </div>
         ) : (
           negotiation.messages.map((msg) => (
@@ -177,11 +197,13 @@ export default function NegotiationConversation({
                   </span>
                 </div>
                 <div className="text-sm">{formatMessageContent(msg)}</div>
-                {msg.emailMetadata && msg.emailMetadata.subject && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Subject: {msg.emailMetadata.subject}
-                  </div>
-                )}
+                {msg.emailMetadata &&
+                  typeof msg.emailMetadata === "object" &&
+                  "subject" in msg.emailMetadata && (
+                    <div className="mt-2 text-xs text-gray-500">
+                      Subject: {String(msg.emailMetadata.subject)}
+                    </div>
+                  )}
               </div>
             </div>
           ))
@@ -189,48 +211,38 @@ export default function NegotiationConversation({
       </div>
 
       {/* Message Input */}
-      <div className="border-t border-gray-200 p-4">
-        <form onSubmit={handleSendMessage} className="flex">
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="min-h-[80px] flex-1 resize-none rounded-md border border-gray-300 px-3 py-2"
-            disabled={
-              isSending ||
-              negotiation.status === "AGREED" ||
-              negotiation.status === "REJECTED" ||
-              negotiation.status === "FAILED" ||
-              negotiation.status === "DONE" ||
-              (negotiation.aiMode === "AUTONOMOUS" &&
-                negotiation.status !== "PENDING_OUTREACH")
-            }
-          />
-          <button
-            type="submit"
-            className="ml-2 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-blue-300"
-            disabled={
-              !message.trim() ||
-              isSending ||
-              negotiation.status === "AGREED" ||
-              negotiation.status === "REJECTED" ||
-              negotiation.status === "FAILED" ||
-              negotiation.status === "DONE" ||
-              (negotiation.aiMode === "AUTONOMOUS" &&
-                negotiation.status !== "PENDING_OUTREACH")
-            }
-          >
-            {isSending ? "Sending..." : "Send"}
-          </button>
-        </form>
-        {negotiation.aiMode === "AUTONOMOUS" &&
-          negotiation.status !== "PENDING_OUTREACH" && (
-            <p className="mt-2 text-xs text-gray-500">
+      {negotiation.status !== "PENDING_OUTREACH" && (
+        <div className="border-t border-gray-200">
+          {negotiation.aiMode === "AUTONOMOUS" && (
+            <div className="bg-yellow-50 p-3 text-sm text-yellow-800">
               AI is handling this conversation. Switch to ASSISTED mode to send
               your own messages.
-            </p>
+            </div>
           )}
-      </div>
+
+          {negotiation.aiMode === "ASSISTED" &&
+            negotiation.status !== "AGREED" &&
+            negotiation.status !== "REJECTED" &&
+            negotiation.status !== "FAILED" &&
+            negotiation.status !== "DONE" && (
+              <SendMessageForm
+                negotiationId={negotiation.id}
+                campaignId={campaignId}
+                onMessageSent={() => router.refresh()}
+              />
+            )}
+
+          {(negotiation.status === "AGREED" ||
+            negotiation.status === "REJECTED" ||
+            negotiation.status === "FAILED" ||
+            negotiation.status === "DONE") && (
+            <div className="bg-gray-50 p-3 text-sm text-gray-600">
+              This negotiation is now {negotiation.status.toLowerCase()}. No
+              more messages can be sent.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

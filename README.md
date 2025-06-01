@@ -120,3 +120,73 @@ Please read our [Contributing Guide](CONTRIBUTING.md) before submitting changes.
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+# Email Configuration for InfluenceFlow Negotiation System
+
+This project includes a robust email communication system for negotiation conversations between brands and creators. Below are instructions for setting up the email functionality.
+
+## Environment Variables
+
+Add the following environment variables to your `.env` file:
+
+```
+# Email Configuration Options (SMTP vs Gmail OAuth2)
+# You can either use SMTP or Gmail OAuth2 for email delivery
+
+# Option 1: SMTP Configuration
+EMAIL_HOST="smtp.example.com"
+EMAIL_PORT="587"
+EMAIL_USER="your-email@example.com"
+EMAIL_PASSWORD="your-email-password"
+EMAIL_FROM_NAME="InfluenceFlow AI"
+EMAIL_FROM_ADDRESS="noreply@influenceflow.ai"
+EMAIL_REPLY_TO="support@influenceflow.ai"
+EMAIL_SECURE="false" # Set to "true" for port 465
+
+# Option 2: Gmail OAuth2 Configuration (Preferred for production)
+GMAIL_CLIENT_ID="your-gmail-client-id"
+GMAIL_CLIENT_SECRET="your-gmail-client-secret"
+GMAIL_REFRESH_TOKEN="your-gmail-refresh-token"
+GMAIL_REDIRECT_URI="https://developers.google.com/oauthplayground" # Default OAuth Playground URI
+
+# Email Webhook Security
+EMAIL_WEBHOOK_SECRET="your-webhook-secret-key" # Used to validate incoming email webhooks
+```
+
+## Setting up Gmail OAuth2
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the Gmail API for your project
+4. Configure the OAuth consent screen:
+   - Set the user type to "External"
+   - Add the `https://mail.google.com/` scope
+   - Add your email as a test user
+5. Create OAuth2 credentials:
+   - Choose "Web application" as the application type
+   - Add `https://developers.google.com/oauthplayground` as an authorized redirect URI
+   - Copy the Client ID and Client Secret
+6. Get a refresh token:
+   - Go to [OAuth Playground](https://developers.google.com/oauthplayground/)
+   - Click the gear icon in the top right and check "Use your own OAuth credentials"
+   - Enter your Client ID and Client Secret
+   - Select "Gmail API v1 > https://mail.google.com/" from the list
+   - Click "Authorize APIs" and follow the prompts
+   - Click "Exchange authorization code for tokens"
+   - Copy the refresh token
+
+## Email Webhook Setup
+
+To receive email replies, you'll need to set up a webhook endpoint. This project includes a webhook handler at `/api/webhooks/email`. Use an email service that supports webhook notifications, such as:
+
+- [Sendgrid Inbound Parse](https://docs.sendgrid.com/for-developers/parsing-email/inbound-email)
+- [Mailgun Inbound Routing](https://documentation.mailgun.com/en/latest/user_manual.html#receiving-forwarding-and-storing-messages)
+- [Postmark Inbound](https://postmarkapp.com/developer/user-guide/inbound)
+
+Configure your email service to forward inbound emails to your webhook URL with the secret:
+
+```
+https://yourdomain.com/api/webhooks/email
+```
+
+Add the `x-webhook-secret` header with your `EMAIL_WEBHOOK_SECRET` value to secure the webhook.
