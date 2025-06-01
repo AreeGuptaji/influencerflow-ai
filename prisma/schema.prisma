@@ -14,6 +14,21 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+// User roles enum
+enum UserRole {
+    BRAND
+    CREATOR
+    ADMIN
+}
+
+// Campaign status enum
+enum CampaignStatus {
+    DRAFT
+    ACTIVE
+    PAUSED
+    COMPLETED
+}
+
 model Post {
     id        Int      @id @default(autoincrement())
     name      String
@@ -55,14 +70,75 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String?
-    accounts      Account[]
-    sessions      Session[]
-    posts         Post[]
+    id                 String    @id @default(cuid())
+    name               String?
+    email              String?   @unique
+    emailVerified      DateTime?
+    image              String?
+    role               UserRole?
+    onboardingComplete Boolean   @default(false)
+
+    accounts       Account[]
+    sessions       Session[]
+    posts          Post[]
+    brandProfile   BrandProfile?
+    creatorProfile CreatorProfile?
+    campaigns      Campaign[]
+}
+
+model CreatorProfile {
+    id             String   @id @default(cuid())
+    userId         String   @unique
+    user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    username       String?
+    email          String?
+    bio            String?
+    niches         String[] // Content categories/niches
+    followerCount  Int?
+    platforms      String[] // Instagram, TikTok, YouTube, etc.
+    location       String?
+    engagementRate Float?
+    recentContent  String[] // Array of recent content links
+    contactInfo    String? // Additional contact information
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model BrandProfile {
+    id          String  @id @default(cuid())
+    userId      String  @unique
+    user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    companyName String
+    industry    String?
+    website     String?
+    description String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Campaign {
+    id           String         @id @default(cuid())
+    title        String
+    description  String
+    budget       Int
+    startDate    DateTime
+    endDate      DateTime
+    status       CampaignStatus @default(DRAFT)
+    niches       String[] // Target niches
+    location     String?
+    minFollowers Int?
+    maxFollowers Int?
+
+    brandId String
+    brand   User   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([status])
+    @@index([brandId])
 }
 
 model VerificationToken {

@@ -1,0 +1,278 @@
+---
+description: This is the product requirement document for the project. Refer to this whenever moving forward in the project
+globs: 
+alwaysApply: false
+---
+# InfluencerFlow AI Platform - Complete MVP PRD
+
+## 🎯 Mission Critical: Win with Voice-Powered Negotiation
+
+**Development Timeline:** Focused development sprint  
+**Key Differentiator:** AI Voice Agents for Real-time Brand-Creator Negotiation  
+**Target:** Functional MVP demonstrating complete campaign lifecycle with voice negotiation showcase
+
+## 🚀 MVP Strategy
+
+### **Phase 1: Foundation + Creator Database**
+
+_Database, authentication setup, and creator discovery system_
+
+### **Phase 2: Campaign & AI Matching System**
+
+_Campaign creation, management, and AI-powered creator matching_
+
+### **Phase 3: Voice Negotiation Engine**
+
+_Voice-powered AI agents for brand-creator negotiations_
+
+### **Phase 4: Contracts & Payments**
+
+_Auto-contract generation and payment processing_
+
+---
+
+## 🏆 Core Features: End-to-End Campaign Management
+
+### **The Complete MVP Platform:**
+
+A comprehensive system for brands to discover, negotiate with, and manage creator relationships:
+
+- AI-powered creator database with advanced filtering
+- Intelligent creator matching based on brand products/services
+- Campaign creation and management
+- Voice-powered AI negotiation system
+- Automated contract generation
+- Payment processing and tracking
+
+### **User Flow:**
+
+1. Brand logs in → Views creator database
+2. Brand creates campaign → Sets targeting criteria
+3. AI matches and recommends relevant creators for the campaign
+4. Brand selects creators → Initiates AI voice negotiation
+5. Voice negotiations conducted → Deal terms captured automatically
+6. Auto-generated contracts from negotiation terms
+7. Payment setup and processing
+8. Campaign performance tracking
+
+---
+
+## ⚡ Development Milestones
+
+### 🎬 **Milestone 1: Foundation & Creator Database**
+
+**Deliverables:**
+
+- Next.js application with TypeScript, Tailwind, tRPC, Prisma
+- Next-Auth authentication with user roles (Brand focus)
+- PostgreSQL database with core schemas
+- Creator database with advanced filtering and search
+- Creator profiles with engagement metrics and content samples
+
+**Database Models:**
+
+```typescript
+User, BrandProfile, Campaign, Creator, Deal, Contract, Payment;
+```
+
+**Success Criteria:**
+
+- ✅ Users can register/login with brand role
+- ✅ Basic navigation and routing works
+- ✅ Creator database with filtering/search functionality
+- ✅ Database connected and seeded with 25+ sample creators
+
+---
+
+### 📊 **Milestone 2: Campaign & AI Matching System**
+
+**Deliverables:**
+
+- Campaign creation interface for brands
+- Campaign dashboard with status tracking
+- AI matching system that analyzes brand requirements
+- Creator recommendation algorithm (similar to Creator Hunter)
+- Campaign details view with targeting information
+
+**AI Matching Features:**
+
+- Product/service information collection from brands
+- Creator relevance scoring based on niche, audience, and engagement
+- Personalized creator recommendations
+
+**Success Criteria:**
+
+- ✅ Brands can create campaigns with detailed requirements
+- ✅ AI system recommends relevant creators based on campaign criteria
+- ✅ Campaign dashboard displays all active campaigns
+- ✅ Campaign details show selected creators
+- ✅ Brands can save creator lists for campaigns
+
+---
+
+### 🎙️ **Milestone 3: Voice Negotiation Engine**
+
+**Deliverables:**
+
+- ElevenLabs voice synthesis integration
+- OpenAI Whisper speech-to-text processing
+- GPT-4 conversation management
+- Voice call initiation system
+- Real-time negotiation interface
+- Deal terms extraction from conversations
+
+**Technical Implementation:**
+
+```typescript
+// Voice Agent Architecture
+VoiceNegotiationEngine {
+  - initiateCall()
+  - processConversation()
+  - extractDealTerms()
+  - generateResponse()
+  - updateDealStatus()
+}
+```
+
+**Success Criteria:**
+
+- ✅ AI can conduct voice conversations with creators
+- ✅ Brand requirements translated into negotiation parameters
+- ✅ Conversation terms are extracted and logged
+- ✅ Deal parameters are captured accurately
+- ✅ Mock negotiations demonstrate end-to-end flow
+
+---
+
+### 📄 **Milestone 4: Contracts & Payments**
+
+**Deliverables:**
+
+- Auto-contract generation from negotiated terms
+- PDF contract creation and download
+- Stripe payment integration (test mode)
+- Payment tracking for brands and creators
+- Campaign completion workflow
+
+**Success Criteria:**
+
+- ✅ Contracts auto-generate from voice negotiations
+- ✅ Payment flow works in test mode
+- ✅ Campaign payments are tracked accurately
+- ✅ Complete end-to-end flow functions correctly
+
+---
+
+## 🎯 Technical Architecture
+
+### **Frontend Stack**
+
+- **Framework:** Next.js with TypeScript
+- **Styling:** Tailwind CSS
+- **State:** React Query for API state
+- **Auth:** Next-Auth
+
+### **Backend Stack**
+
+- **API:** tRPC with Next.js API routes
+- **Database:** PostgreSQL with Prisma ORM
+- **File Storage:** Local storage (future: cloud storage)
+
+### **AI/Voice Integration**
+
+- **Voice Synthesis:** ElevenLabs API
+- **Speech Recognition:** OpenAI Whisper API
+- **Conversation AI:** GPT-4 with function calling
+- **Deal Extraction:** Custom GPT-4 prompts
+
+### **Payments & Contracts**
+
+- **Payments:** Stripe (test mode)
+- **PDF Generation:** React-PDF or similar library
+- **E-Signature:** Mock implementation for MVP
+
+---
+
+## 🏆 Current Application Structure
+
+```
+app
+|__ api - Backend API endpoints
+|__ _components - Shared UI components
+|__ database - Creator database view
+|__ campaigns - Campaign management
+  |__ [id] - Individual campaign view
+  |__ create - Campaign creation
+  |__ negotiate - Voice negotiation interface
+  |__ contracts - Contract generation and management
+  |__ payments - Payment processing
+|__ layout.tsx - Main layout with navigation
+|__ page.tsx - Landing page
+```
+
+### **Key User Flows:**
+
+1. **Brand Sign In** → Access creator database and campaigns
+2. **Creator Database** → Filter and discover creators by metrics
+3. **Campaign Creation** → Set up campaign requirements and targeting
+4. **AI Matching** → Get creator recommendations based on campaign needs
+5. **Voice Negotiation** → Conduct AI-powered voice negotiations
+6. **Contract Generation** → Auto-generate contracts from negotiated terms
+7. **Payment Processing** → Handle payments and track campaign status
+
+---
+
+## 📊 Success Metrics (MVP)
+
+### **Must-Have:**
+
+- ✅ Creator database with search and filtering
+- ✅ AI matching system for personalized creator recommendations
+- ✅ Campaign creation and management
+- ✅ Voice negotiation working with mock conversations
+- ✅ Contract auto-generation from negotiated terms
+- ✅ Payment flow in test mode
+- ✅ 25+ sample creators with realistic data
+- ✅ 3+ sample campaigns with complete flow
+
+### **Enhancements (Post-MVP):**
+
+- Advanced analytics dashboard
+- Multi-language voice support
+- Mobile applications
+- Social media API integrations
+- More sophisticated negotiation capabilities
+
+---
+
+## 🛠️ Technology Stack
+
+### **Core Technologies:**
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- tRPC
+- Prisma
+- PostgreSQL
+- Next-Auth
+
+### **AI & Voice Integrations:**
+
+- ElevenLabs (Voice Synthesis)
+- OpenAI Whisper (Speech-to-Text)
+- OpenAI GPT-4 (Conversation AI)
+- React-PDF (Document Generation)
+- Stripe (Payment Processing)
+
+---
+
+## 🎯 Development Focus
+
+1. **Creator Database & AI Matching** → Build robust creator discovery
+2. **Voice Negotiation Engine** → Implement core differentiator
+3. **Contract Generation** → Automate deal documentation
+4. **Payment Integration** → Complete the end-to-end flow
+5. **UI Polish** → Create a seamless user experience
+
+**Moving forward with our end-to-end MVP to revolutionize influencer marketing with voice-powered negotiation! 🚀**
