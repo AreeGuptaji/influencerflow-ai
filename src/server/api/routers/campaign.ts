@@ -33,9 +33,9 @@ export const campaignRouter = createTRPCRouter({
         where: { id: ctx.session.user.id },
       });
 
-      if (user?.role !== "BRAND") {
-        throw new Error("Only brands can create campaigns");
-      }
+      // if (user?.role !== "BRAND") {
+      //   throw new Error("Only brands can create campaigns");
+      // }
 
       // Validate date logic
       if (input.endDate <= input.startDate) {
@@ -75,9 +75,9 @@ export const campaignRouter = createTRPCRouter({
       where: { id: ctx.session.user.id },
     });
 
-    if (user?.role !== "BRAND") {
-      throw new Error("Only brands can view their campaigns");
-    }
+    // if (user?.role !== "BRAND") {
+    //   throw new Error("Only brands can view their campaigns");
+    // }
 
     return await ctx.db.campaign.findMany({
       where: { brandId: ctx.session.user.id },

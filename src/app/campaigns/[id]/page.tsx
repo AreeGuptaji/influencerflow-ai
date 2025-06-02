@@ -1,124 +1,185 @@
 import { auth } from "@/server/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { db } from "@/server/db";
+import {
+  CampaignStatus,
+  AIMode,
+  NegotiationStatus,
+  MessageSender,
+} from "@prisma/client";
+import { format } from "date-fns";
+import { api } from "@/trpc/server";
+
+import NegotiationStartModal from "./components/NegotiationStartModal";
+
+// Define types for the data structures
+interface SelectedCreator {
+  id: string;
+  name: string;
+  followers: number;
+  engagement: number;
+  categories: string[];
+  location: string;
+  status: string;
+}
+
+interface Message {
+  id: string;
+  sender: MessageSender;
+  content: string;
+  timestamp: Date;
+}
+
+interface Term {
+  fee: number;
+  deliverables: string[];
+  requirements: string[];
+  revisions: number;
+}
+
+interface NegotiationParameters {
+  followerCount?: string | number;
+  engagementRate?: string | number;
+  niches?: string[];
+  location?: string;
+  [key: string]: unknown;
+}
+
+interface Negotiation {
+  id: string;
+  creatorId: string;
+  creatorEmail: string;
+  status: NegotiationStatus;
+  parameters: NegotiationParameters;
+  messages: Message[];
+  terms?: Term;
+}
+
+interface CampaignWithNegotiations {
+  id: string;
+  title: string;
+  description: string;
+  budget: number;
+  startDate: Date;
+  endDate: Date;
+  status: CampaignStatus;
+  niches: string[];
+  location: string | null;
+  minFollowers: number | null;
+  maxFollowers: number | null;
+  brandId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  Negotiation: Negotiation[];
+}
 
 export default async function CampaignDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await auth();
+
+  // Extract id from params to prevent "params should be awaited" error
+  const { id } = await params;
 
   // Redirect if not logged in
   if (!session?.user) {
     redirect("/api/auth/signin");
   }
 
-  // Mock campaign details - in a real app, this would fetch from the database
-  const campaignData = {
-    "1": {
-      id: "1",
-      title: "Summer Fitness Challenge",
-      description:
-        "Promoting our new fitness app with summer workout challenges. We're looking for fitness creators who can demonstrate our app features while engaging their audience with workout challenges. Creators will receive the app for free and compensation for their content.",
-      status: "ACTIVE",
-      budget: 5000,
-      startDate: new Date("2023-06-15"),
-      endDate: new Date("2023-08-15"),
-      createdAt: new Date("2023-05-20"),
-      niches: ["Fitness", "Health", "Lifestyle"],
-      location: "US",
-      minFollowers: 10000,
-      maxFollowers: 500000,
-      selectedCreators: [
-        {
-          id: "c1",
-          name: "FitnessPro",
-          followers: 250000,
-          engagement: 4.5,
-          categories: ["Fitness"],
-          location: "US",
-          status: "Matched",
-        },
-        {
-          id: "c2",
-          name: "HealthyLifestyle",
-          followers: 180000,
-          engagement: 3.8,
-          categories: ["Fitness", "Health"],
-          location: "US",
-          status: "Negotiating",
-        },
-        {
-          id: "c3",
-          name: "WorkoutDaily",
-          followers: 120000,
-          engagement: 5.2,
-          categories: ["Fitness"],
-          location: "CA",
-          status: "Contracted",
-        },
-      ],
+  // Fetch campaign data from database
+  const campaign = (await db.campaign.findUnique({
+    where: {
+      id: id,
+      brandId: session.user.id, // Ensure the campaign belongs to the logged in user
     },
-    "2": {
-      id: "2",
-      title: "Tech Product Launch",
-      description:
-        "Launching our new smart home device with tech influencers. We need tech-savvy creators who can highlight the innovative features of our smart home system. The content should focus on ease of use, integration with other smart devices, and unique selling points.",
-      status: "DRAFT",
-      budget: 10000,
-      startDate: new Date("2023-07-01"),
-      endDate: new Date("2023-09-01"),
-      createdAt: new Date("2023-06-10"),
-      niches: ["Tech", "Smart Home", "Gadgets"],
-      location: "",
-      minFollowers: 50000,
-      maxFollowers: 1000000,
-      selectedCreators: [],
-    },
-    "3": {
-      id: "3",
-      title: "Holiday Gift Guide",
-      description:
-        "Featuring our products in holiday gift recommendations. We want creators to include our products in their holiday gift guides, targeting different demographics. Content should emphasize the gift-worthiness of our products and seasonal relevance.",
-      status: "PAUSED",
-      budget: 7500,
-      startDate: new Date("2023-11-01"),
-      endDate: new Date("2023-12-25"),
-      createdAt: new Date("2023-09-15"),
-      niches: ["Lifestyle", "Fashion", "Beauty"],
-      location: "US",
-      minFollowers: 25000,
-      maxFollowers: 750000,
-      selectedCreators: [
-        {
-          id: "c4",
-          name: "StyleGuru",
-          followers: 420000,
-          engagement: 3.2,
-          categories: ["Fashion", "Lifestyle"],
-          location: "US",
-          status: "Matched",
+    include: {
+      Negotiation: {
+        include: {
+          terms: true,
+          messages: {
+            orderBy: {
+              timestamp: "desc",
+            },
+            take: 1,
+          },
         },
-        {
-          id: "c5",
-          name: "BeautyExperts",
-          followers: 320000,
-          engagement: 4.1,
-          categories: ["Beauty"],
-          location: "UK",
-          status: "Matched",
-        },
-      ],
+      },
     },
-  };
+  })) as CampaignWithNegotiations | null;
 
-  const campaign = campaignData[params.id as keyof typeof campaignData];
-
-  // If campaign doesn't exist, show 404
+  // If campaign doesn't exist or doesn't belong to user, show 404
   if (!campaign) {
     notFound();
   }
+
+  // Transform data to handle in the UI
+  const selectedCreators: SelectedCreator[] = campaign.Negotiation.map(
+    (negotiation) => {
+      // Get the latest message status
+      const latestMessage = negotiation.messages[0];
+
+      // Determine status display
+      let statusDisplay = "Matched";
+      if (
+        negotiation.status === "IN_PROGRESS" ||
+        negotiation.status === "TERMS_PROPOSED"
+      ) {
+        statusDisplay = "Negotiating";
+      } else if (negotiation.status === "AGREED") {
+        statusDisplay = "Contracted";
+      }
+
+      // Extract parameters with proper type checking
+      const params = negotiation.parameters;
+
+      // Safely extract follower count
+      let followerCount = 0;
+      if (params.followerCount !== undefined) {
+        followerCount =
+          typeof params.followerCount === "string"
+            ? parseInt(params.followerCount, 10)
+            : typeof params.followerCount === "number"
+              ? params.followerCount
+              : 0;
+      }
+
+      // Safely extract engagement rate
+      let engagementRate = 0;
+      if (params.engagementRate !== undefined) {
+        engagementRate =
+          typeof params.engagementRate === "string"
+            ? parseFloat(params.engagementRate)
+            : typeof params.engagementRate === "number"
+              ? params.engagementRate
+              : 0;
+      }
+
+      // Safely extract niches
+      const niches = Array.isArray(params.niches)
+        ? params.niches.map(String)
+        : [];
+
+      // Safely extract location
+      const location =
+        typeof params.location === "string" ? params.location : "Unknown";
+
+      // Ensure name is always a string
+      const name = negotiation.creatorEmail.split("@")[0] ?? "Unknown";
+
+      return {
+        id: negotiation.creatorId,
+        name,
+        followers: followerCount,
+        engagement: engagementRate,
+        categories: niches,
+        location,
+        status: statusDisplay,
+      };
+    },
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -145,21 +206,51 @@ export default async function CampaignDetailPage({
             </span>
           </div>
           <div>
-            <button className="mr-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            {/* <Link
+              href={`/campaigns/${campaign.id}/edit`}
+              className="mr-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
               Edit Campaign
-            </button>
+            </Link> */}
             {campaign.status === "DRAFT" ? (
-              <button className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-                Launch Campaign
-              </button>
+              <form
+                action={`/api/campaigns/${campaign.id}/status`}
+                method="POST"
+              >
+                <input type="hidden" name="status" value="ACTIVE" />
+                <button
+                  type="submit"
+                  className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                >
+                  Launch Campaign
+                </button>
+              </form>
             ) : campaign.status === "ACTIVE" ? (
-              <button className="rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700">
-                Pause Campaign
-              </button>
+              <form
+                action={`/api/campaigns/${campaign.id}/status`}
+                method="POST"
+              >
+                <input type="hidden" name="status" value="PAUSED" />
+                <button
+                  type="submit"
+                  className="rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700"
+                >
+                  Pause Campaign
+                </button>
+              </form>
             ) : (
-              <button className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-                Resume Campaign
-              </button>
+              <form
+                action={`/api/campaigns/${campaign.id}/status`}
+                method="POST"
+              >
+                <input type="hidden" name="status" value="ACTIVE" />
+                <button
+                  type="submit"
+                  className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                >
+                  Resume Campaign
+                </button>
+              </form>
             )}
           </div>
         </div>
@@ -184,19 +275,19 @@ export default async function CampaignDetailPage({
               <div>
                 <p className="text-sm text-gray-500">Created</p>
                 <p className="font-medium text-gray-900">
-                  {campaign.createdAt.toLocaleDateString()}
+                  {format(campaign.createdAt, "MM/dd/yyyy")}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Start Date</p>
                 <p className="font-medium text-gray-900">
-                  {campaign.startDate.toLocaleDateString()}
+                  {format(campaign.startDate, "MM/dd/yyyy")}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">End Date</p>
                 <p className="font-medium text-gray-900">
-                  {campaign.endDate.toLocaleDateString()}
+                  {format(campaign.endDate, "MM/dd/yyyy")}
                 </p>
               </div>
             </div>
@@ -222,14 +313,14 @@ export default async function CampaignDetailPage({
             <div>
               <p className="text-sm text-gray-500">Location</p>
               <p className="font-medium text-gray-900">
-                {campaign.location || "Any"}
+                {campaign.location ?? "Any"}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Follower Range</p>
               <p className="font-medium text-gray-900">
-                {campaign.minFollowers.toLocaleString()} -{" "}
-                {campaign.maxFollowers.toLocaleString()}
+                {campaign.minFollowers?.toLocaleString() ?? 0} -{" "}
+                {campaign.maxFollowers?.toLocaleString() ?? "Any"}
               </p>
             </div>
           </div>
@@ -240,16 +331,15 @@ export default async function CampaignDetailPage({
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-md bg-blue-50 p-3 text-center">
               <p className="text-2xl font-bold text-blue-700">
-                {campaign.selectedCreators.length}
+                {selectedCreators.length}
               </p>
               <p className="text-sm text-blue-600">Creators</p>
             </div>
             <div className="rounded-md bg-green-50 p-3 text-center">
               <p className="text-2xl font-bold text-green-700">
                 {
-                  campaign.selectedCreators.filter(
-                    (c) => c.status === "Contracted",
-                  ).length
+                  selectedCreators.filter((c) => c.status === "Contracted")
+                    .length
                 }
               </p>
               <p className="text-sm text-green-600">Contracted</p>
@@ -257,20 +347,15 @@ export default async function CampaignDetailPage({
             <div className="rounded-md bg-yellow-50 p-3 text-center">
               <p className="text-2xl font-bold text-yellow-700">
                 {
-                  campaign.selectedCreators.filter(
-                    (c) => c.status === "Negotiating",
-                  ).length
+                  selectedCreators.filter((c) => c.status === "Negotiating")
+                    .length
                 }
               </p>
               <p className="text-sm text-yellow-600">Negotiating</p>
             </div>
             <div className="rounded-md bg-purple-50 p-3 text-center">
               <p className="text-2xl font-bold text-purple-700">
-                {
-                  campaign.selectedCreators.filter(
-                    (c) => c.status === "Matched",
-                  ).length
-                }
+                {selectedCreators.filter((c) => c.status === "Matched").length}
               </p>
               <p className="text-sm text-purple-600">Matched</p>
             </div>
@@ -282,12 +367,15 @@ export default async function CampaignDetailPage({
       <div className="mb-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Selected Creators</h2>
-          <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          <Link
+            href={`/campaigns/${campaign.id}/creators`}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
             Find More Creators
-          </button>
+          </Link>
         </div>
 
-        {campaign.selectedCreators.length > 0 ? (
+        {selectedCreators.length > 0 ? (
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -337,13 +425,13 @@ export default async function CampaignDetailPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {campaign.selectedCreators.map((creator) => (
+                {selectedCreators.map((creator) => (
                   <tr key={creator.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4">
                       <div className="flex items-center">
                         <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-gray-200">
                           <div className="flex h-full w-full items-center justify-center bg-blue-100 text-blue-800">
-                            {creator.name.charAt(0)}
+                            {creator.name.charAt(0).toUpperCase()}
                           </div>
                         </div>
                         <div className="ml-4">
@@ -391,19 +479,28 @@ export default async function CampaignDetailPage({
                     </td>
                     <td className="px-4 py-4 text-sm">
                       {creator.status === "Matched" && (
-                        <button className="text-blue-600 hover:text-blue-800">
+                        <Link
+                          href={`/campaigns/${campaign.id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}`}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
                           Start Negotiation
-                        </button>
+                        </Link>
                       )}
                       {creator.status === "Negotiating" && (
-                        <button className="text-blue-600 hover:text-blue-800">
+                        <Link
+                          href={`/campaigns/${campaign.id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}`}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
                           View Conversation
-                        </button>
+                        </Link>
                       )}
                       {creator.status === "Contracted" && (
-                        <button className="text-blue-600 hover:text-blue-800">
+                        <Link
+                          href={`/campaigns/${campaign.id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}?view=contract`}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
                           View Contract
-                        </button>
+                        </Link>
                       )}
                     </td>
                   </tr>
@@ -419,9 +516,12 @@ export default async function CampaignDetailPage({
             <p className="mb-4 text-sm text-gray-600">
               Find and select creators that match your campaign criteria
             </p>
-            <button className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <Link
+              href={`/campaigns/${campaign.id}/creators`}
+              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
               Find Creators
-            </button>
+            </Link>
           </div>
         )}
       </div>
@@ -437,11 +537,17 @@ export default async function CampaignDetailPage({
               Let our AI voice agent negotiate with creators on your behalf.
             </p>
           </div>
-          <button className="rounded-md bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 font-medium text-white hover:from-blue-600 hover:to-purple-700">
-            Enable Voice Negotiation
-          </button>
+          <Link
+            href={`/campaigns/${campaign.id}/voice-settings`}
+            className="rounded-md bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 font-medium text-white hover:from-blue-600 hover:to-purple-700"
+          >
+            Configure Voice Negotiation
+          </Link>
         </div>
       </div>
+
+      {/* This will be a client component for starting negotiations with new creators */}
+      <NegotiationStartModal campaignId={campaign.id} />
     </div>
   );
 }

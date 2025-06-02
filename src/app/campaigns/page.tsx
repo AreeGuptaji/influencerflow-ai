@@ -2,6 +2,8 @@ import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
+import { api } from "@/trpc/server";
+
 export default async function CampaignsPage() {
   const session = await auth();
 
@@ -11,42 +13,44 @@ export default async function CampaignsPage() {
   }
 
   // Mock campaigns data
-  const campaigns = [
-    {
-      id: "1",
-      title: "Summer Fitness Challenge",
-      description:
-        "Promoting our new fitness app with summer workout challenges",
-      status: "ACTIVE",
-      budget: 5000,
-      startDate: new Date("2023-06-15"),
-      endDate: new Date("2023-08-15"),
-      createdAt: new Date("2023-05-20"),
-      creatorsMatched: 8,
-    },
-    {
-      id: "2",
-      title: "Tech Product Launch",
-      description: "Launching our new smart home device with tech influencers",
-      status: "DRAFT",
-      budget: 10000,
-      startDate: new Date("2023-07-01"),
-      endDate: new Date("2023-09-01"),
-      createdAt: new Date("2023-06-10"),
-      creatorsMatched: 0,
-    },
-    {
-      id: "3",
-      title: "Holiday Gift Guide",
-      description: "Featuring our products in holiday gift recommendations",
-      status: "PAUSED",
-      budget: 7500,
-      startDate: new Date("2023-11-01"),
-      endDate: new Date("2023-12-25"),
-      createdAt: new Date("2023-09-15"),
-      creatorsMatched: 5,
-    },
-  ];
+  // const campaigns = [
+  //   {
+  //     id: "1",
+  //     title: "Summer Fitness Challenge",
+  //     description:
+  //       "Promoting our new fitness app with summer workout challenges",
+  //     status: "ACTIVE",
+  //     budget: 5000,
+  //     startDate: new Date("2023-06-15"),
+  //     endDate: new Date("2023-08-15"),
+  //     createdAt: new Date("2023-05-20"),
+  //     creatorsMatched: 8,
+  //   },
+  //   {
+  //     id: "2",
+  //     title: "Tech Product Launch",
+  //     description: "Launching our new smart home device with tech influencers",
+  //     status: "DRAFT",
+  //     budget: 10000,
+  //     startDate: new Date("2023-07-01"),
+  //     endDate: new Date("2023-09-01"),
+  //     createdAt: new Date("2023-06-10"),
+  //     creatorsMatched: 0,
+  //   },
+  //   {
+  //     id: "3",
+  //     title: "Holiday Gift Guide",
+  //     description: "Featuring our products in holiday gift recommendations",
+  //     status: "PAUSED",
+  //     budget: 7500,
+  //     startDate: new Date("2023-11-01"),
+  //     endDate: new Date("2023-12-25"),
+  //     createdAt: new Date("2023-09-15"),
+  //     creatorsMatched: 5,
+  //   },
+  // ];
+
+  const campaigns = await api.campaign.getMyBrandCampaigns();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -98,7 +102,7 @@ export default async function CampaignsPage() {
                 <div>
                   <p className="text-xs text-gray-500">Creators</p>
                   <p className="font-medium text-gray-900">
-                    {campaign.creatorsMatched}
+                    {/* {campaign.creatorsMatched} */}
                   </p>
                 </div>
                 <div>
