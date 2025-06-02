@@ -3,14 +3,16 @@ import { db } from "@/server/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
+
     // Try to find the contract with limited information
     try {
       const contract = await db.contract.findUnique({
         where: {
-          id: params.id,
+          id: id,
         },
         include: {
           campaign: {

@@ -5,9 +5,10 @@ import { CampaignStatus } from "@prisma/client";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
+  const { id } = await params;
 
   // Check authentication
   if (!session?.user) {
@@ -29,7 +30,7 @@ export async function POST(
     // Update campaign status
     const campaign = await db.campaign.update({
       where: {
-        id: params.id,
+        id: id,
         brandId: session.user.id, // Ensure user owns the campaign
       },
       data: {

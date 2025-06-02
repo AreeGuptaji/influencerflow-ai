@@ -1,6 +1,7 @@
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 // Validation schema for parameters update
@@ -15,10 +16,11 @@ const updateParametersSchema = z.object({
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string; negotiationId: string } },
+  { params }: { params: Promise<{ id: string; negotiationId: string }> },
 ) {
   try {
     const session = await auth();
+    const { id, negotiationId } = await params;
 
     // Check authentication
     if (!session?.user) {
@@ -28,7 +30,7 @@ export async function PUT(
     // Get negotiation to verify access
     const negotiation = await db.negotiation.findUnique({
       where: {
-        id: params.negotiationId,
+        id: negotiationId,
       },
       include: {
         campaign: {
@@ -62,9 +64,10 @@ export async function PUT(
 
     const { parameters } = validationResult.data;
 
-    // Merge new parameters with existing ones
+    // Cast negotiation.parameters to an object and merge with new parameters
+    const existingParams = negotiation.parameters as Record<string, unknown>;
     const updatedParameters = {
-      ...negotiation.parameters,
+      ...existingParams,
       ...parameters,
     };
 
@@ -74,7 +77,7 @@ export async function PUT(
         id: negotiation.id,
       },
       data: {
-        parameters: updatedParameters,
+        parameters: updatedParameters as Prisma.JsonObject,
       },
     });
 

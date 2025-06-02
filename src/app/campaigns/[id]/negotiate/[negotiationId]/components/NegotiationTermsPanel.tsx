@@ -35,17 +35,22 @@ export default function NegotiationTermsPanel({
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
-  // Function to create empty terms structure
-  const createEmptyTerms = () => {
+  // Create empty terms object for new terms
+  const createEmptyTerms = (): DealTerms => {
+    // Ensure we always have string values, not undefined
+    const today = new Date().toISOString().split("T")[0] || "2023-01-01";
+    const thirtyDaysLater =
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0] || "2023-01-31";
+
     return {
       id: "",
       fee: 0,
       deliverables: [""],
       timeline: {
-        startDate: new Date().toISOString().split("T")[0],
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
+        startDate: today,
+        endDate: thirtyDaysLater,
       },
       requirements: [""],
       revisions: 1,

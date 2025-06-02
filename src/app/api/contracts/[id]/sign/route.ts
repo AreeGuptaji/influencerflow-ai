@@ -17,9 +17,11 @@ const signContractSchema = z.object({
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
+
     // Parse and validate request body
     const body = await req.json();
     const validationResult = signContractSchema.safeParse(body);
@@ -40,7 +42,7 @@ export async function POST(
       // Find the contract
       const contract = await db.contract.findUnique({
         where: {
-          id: params.id,
+          id: id,
         },
         include: {
           negotiation: true,
@@ -77,7 +79,7 @@ export async function POST(
       // Update contract to signed status
       const updatedContract = await db.contract.update({
         where: {
-          id: params.id,
+          id: id,
         },
         data: {
           status: ContractStatus.SIGNED,

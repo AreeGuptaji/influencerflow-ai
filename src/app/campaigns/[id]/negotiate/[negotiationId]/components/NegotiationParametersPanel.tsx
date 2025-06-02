@@ -19,13 +19,13 @@ export default function NegotiationParametersPanel({
   campaignId: string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [parameters, setParameters] = useState({
     followerCount: negotiation.parameters.followerCount || "",
     engagementRate: negotiation.parameters.engagementRate || "",
     niches: negotiation.parameters.niches || [],
     location: negotiation.parameters.location || "",
   });
-  const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
   const handleSave = async () => {
@@ -79,7 +79,9 @@ export default function NegotiationParametersPanel({
 
   const removeNiche = (index: number) => {
     if (parameters.niches.length > 1) {
-      const updatedNiches = parameters.niches.filter((_, i) => i !== index);
+      const updatedNiches = parameters.niches.filter(
+        (_: string, i: number) => i !== index,
+      );
       setParameters({ ...parameters, niches: updatedNiches });
     }
   };

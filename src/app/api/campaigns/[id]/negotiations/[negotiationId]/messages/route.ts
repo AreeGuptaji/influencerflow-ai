@@ -1,7 +1,7 @@
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { NextRequest, NextResponse } from "next/server";
-import { MessageSender, MessageType } from "@prisma/client";
+import { MessageSender, MessageType, Prisma } from "@prisma/client";
 import { z } from "zod";
 
 // Validation schema for message creation
@@ -14,11 +14,11 @@ const createMessageSchema = z.object({
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string; negotiationId: string } },
+  { params }: { params: Promise<{ id: string; negotiationId: string }> },
 ) {
   try {
     const session = await auth();
-    const { id, negotiationId } = params;
+    const { id, negotiationId } = await params;
 
     // Check authentication
     if (!session?.user) {
@@ -81,7 +81,7 @@ export async function POST(
         sender,
         content,
         contentType,
-        emailMetadata: emailMetadata || {},
+        emailMetadata: (emailMetadata as Prisma.JsonObject) || undefined,
         timestamp: new Date(),
       },
     });
@@ -116,11 +116,11 @@ export async function POST(
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string; negotiationId: string } },
+  { params }: { params: Promise<{ id: string; negotiationId: string }> },
 ) {
   try {
     const session = await auth();
-    const { id, negotiationId } = params;
+    const { id, negotiationId } = await params;
 
     // Check authentication
     if (!session?.user) {

@@ -22,17 +22,16 @@ const createNegotiationSchema = z.object({
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
+    const { id: campaignId } = await params;
 
     // Check if user is authenticated
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const campaignId = params.id;
 
     // Check if campaign exists and belongs to the user
     const campaign = await db.campaign.findUnique({

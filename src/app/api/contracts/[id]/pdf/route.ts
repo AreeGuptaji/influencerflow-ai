@@ -4,10 +4,11 @@ import { db } from "@/server/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
+    const { id } = await params;
 
     // Check if user is authenticated
     if (!session?.user) {
@@ -21,7 +22,7 @@ export async function GET(
     try {
       const contract = await db.contract.findUnique({
         where: {
-          id: params.id,
+          id: id,
         },
         include: {
           campaign: true,

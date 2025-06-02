@@ -26,10 +26,11 @@ const dealTermsSchema = z.object({
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string; negotiationId: string } },
+  { params }: { params: Promise<{ id: string; negotiationId: string }> },
 ) {
   try {
     const session = await auth();
+    const { id, negotiationId } = await params;
 
     // Check authentication
     if (!session?.user) {
@@ -39,7 +40,7 @@ export async function POST(
     // Get negotiation to verify access
     const negotiation = await db.negotiation.findUnique({
       where: {
-        id: params.negotiationId,
+        id: negotiationId,
       },
       include: {
         campaign: {
@@ -122,10 +123,11 @@ export async function POST(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string; negotiationId: string } },
+  { params }: { params: Promise<{ id: string; negotiationId: string }> },
 ) {
   try {
     const session = await auth();
+    const { id, negotiationId } = await params;
 
     // Check authentication
     if (!session?.user) {
@@ -135,7 +137,7 @@ export async function PUT(
     // Get negotiation to verify access
     const negotiation = await db.negotiation.findUnique({
       where: {
-        id: params.negotiationId,
+        id: negotiationId,
       },
       include: {
         campaign: {

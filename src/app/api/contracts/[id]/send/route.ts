@@ -5,10 +5,11 @@ import { sendContractEmail } from "@/server/services/contract.service";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
+    const { id } = await params;
 
     // Check if user is authenticated
     if (!session?.user) {
@@ -22,7 +23,7 @@ export async function POST(
       // Find the contract
       const contract = await db.contract.findUnique({
         where: {
-          id: params.id,
+          id: id,
         },
         include: {
           campaign: true,
@@ -55,7 +56,7 @@ export async function POST(
 
       // Send the contract via email
       const result = await sendContractEmail({
-        contractId: params.id,
+        contractId: id,
         includeMessage: true,
       });
 

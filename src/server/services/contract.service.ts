@@ -52,17 +52,46 @@ export async function sendContractEmail({
 
     // Get terms or use fallbacks
     const terms = contract.negotiation.terms;
-    const startDate = terms?.timeline
-      ? typeof terms.timeline === "string"
-        ? JSON.parse(terms.timeline).startDate || "As specified in contract"
-        : terms.timeline.startDate || "As specified in contract"
-      : "As specified in contract";
 
-    const endDate = terms?.timeline
-      ? typeof terms.timeline === "string"
-        ? JSON.parse(terms.timeline).endDate || "As specified in contract"
-        : terms.timeline.endDate || "As specified in contract"
-      : "As specified in contract";
+    // Helper function to safely access timeline properties
+    const getTimelineProperty = (
+      propertyName: string,
+      defaultValue: string,
+    ) => {
+      if (!terms?.timeline) return defaultValue;
+
+      try {
+        // Handle string case (needs parsing)
+        if (typeof terms.timeline === "string") {
+          const parsed = JSON.parse(terms.timeline);
+          return parsed[propertyName] || defaultValue;
+        }
+
+        // Handle object case with type guard
+        if (
+          terms.timeline &&
+          typeof terms.timeline === "object" &&
+          propertyName in terms.timeline
+        ) {
+          // Use type assertion since we confirmed the property exists
+          return (
+            ((terms.timeline as Record<string, unknown>)[
+              propertyName
+            ] as string) || defaultValue
+          );
+        }
+
+        return defaultValue;
+      } catch (e) {
+        return defaultValue;
+      }
+    };
+
+    const startDate = getTimelineProperty(
+      "startDate",
+      "As specified in contract",
+    );
+    const endDate = getTimelineProperty("endDate", "As specified in contract");
 
     const fee = terms?.fee ? `$${terms.fee}` : "As specified in contract";
 

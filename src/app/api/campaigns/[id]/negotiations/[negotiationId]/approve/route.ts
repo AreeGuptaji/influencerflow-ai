@@ -5,10 +5,11 @@ import { NegotiationStatus } from "@prisma/client";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string; negotiationId: string } },
+  { params }: { params: Promise<{ id: string; negotiationId: string }> },
 ) {
   try {
     const session = await auth();
+    const { id, negotiationId } = await params;
 
     // Check authentication
     if (!session?.user) {
@@ -18,7 +19,7 @@ export async function POST(
     // Get negotiation to verify access
     const negotiation = await db.negotiation.findUnique({
       where: {
-        id: params.negotiationId,
+        id: negotiationId,
       },
       include: {
         campaign: {
@@ -82,7 +83,7 @@ export async function POST(
     // Redirect back to the negotiation page with contract view
     return NextResponse.redirect(
       new URL(
-        `/campaigns/${params.id}/negotiate/${params.negotiationId}?view=contract`,
+        `/campaigns/${id}/negotiate/${negotiationId}?view=contract`,
         req.url,
       ),
     );

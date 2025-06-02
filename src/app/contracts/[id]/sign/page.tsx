@@ -26,24 +26,43 @@ interface ContractData {
 export default function ContractSignPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const [contract, setContract] = useState<ContractData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(false);
+  const [contractId, setContractId] = useState<string | null>(null);
   const [creatorName, setCreatorName] = useState("");
   const [creatorEmail, setCreatorEmail] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [ifscCode, setIfscCode] = useState("");
   const router = useRouter();
 
+  // Resolve params when component mounts
+  useEffect(() => {
+    async function resolveParams() {
+      try {
+        const resolvedParams = await params;
+        setContractId(resolvedParams.id);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to resolve params",
+        );
+      }
+    }
+
+    void resolveParams();
+  }, [params]);
+
   // Fetch contract data
   const fetchContract = async () => {
+    if (!contractId) return;
+
     setLoading(true);
     try {
-      const response = await fetch(`/api/contracts/${params.id}/public`);
+      const response = await fetch(`/api/contracts/${contractId}/public`);
 
       if (!response.ok) {
         throw new Error(`Error fetching contract: ${response.statusText}`);
@@ -70,11 +89,11 @@ export default function ContractSignPage({
 
   // Sign the contract
   const signContract = async () => {
-    if (!contract || !creatorName || !creatorEmail) return;
+    if (!contract || !contractId || !creatorName || !creatorEmail) return;
 
     setSigning(true);
     try {
-      const response = await fetch(`/api/contracts/${params.id}/sign`, {
+      const response = await fetch(`/api/contracts/${contractId}/sign`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -102,6 +121,13 @@ export default function ContractSignPage({
     }
   };
 
+  // Fetch contract when contractId changes
+  useEffect(() => {
+    if (contractId) {
+      void fetchContract();
+    }
+  }, [contractId]);
+
   // Render markdown content as HTML
   const renderMarkdown = (content: string): string => {
     // Very simple markdown rendering (a more robust solution would use a markdown library)
@@ -111,10 +137,6 @@ export default function ContractSignPage({
       .replace(/\n\n/g, '<div class="my-2"></div>')
       .replace(/\n/g, "<br />");
   };
-
-  useEffect(() => {
-    void fetchContract();
-  }, [params.id]);
 
   if (loading) {
     return (

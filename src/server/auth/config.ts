@@ -32,7 +32,8 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig = {
-  adapter: PrismaAdapter(db),
+  // Use type assertion to work around version mismatch between @auth/core in next-auth and @auth/prisma-adapter
+  adapter: PrismaAdapter(db) as any,
   providers: [Google],
   callbacks: {
     session: ({ session, user }) => ({

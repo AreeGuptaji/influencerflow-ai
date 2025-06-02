@@ -5,7 +5,7 @@ import Link from "next/link";
 import { api } from "@/trpc/server";
 import CreatorSelectionClient from "./CreatorSelectionClient";
 import type { CreatorProfile } from "@prisma/client";
-import { Session } from "next-auth";
+import type { Session } from "next-auth";
 
 // Define interface for the props passed to the client component
 interface FilteredCreator extends CreatorProfile {

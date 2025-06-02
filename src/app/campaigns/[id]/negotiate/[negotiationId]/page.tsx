@@ -63,7 +63,7 @@ export default async function NegotiationPage({
   searchParams,
 }: {
   params: Promise<{ id: string; negotiationId: string }>;
-  searchParams?: { view?: string };
+  searchParams: Promise<{ view?: string } | undefined>;
 }) {
   // Get auth session and handle errors
   const sessionResult = await auth();
@@ -71,7 +71,8 @@ export default async function NegotiationPage({
 
   // Extract ids from params to prevent "params should be awaited" error
   const { id, negotiationId } = await params;
-  const viewParam = searchParams?.view;
+  const searchParamsValue = await searchParams;
+  const viewParam = searchParamsValue?.view;
 
   // Redirect if not logged in
   if (!session?.user) {

@@ -4,10 +4,11 @@ import { db } from "@/server/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
+    const { id } = await params;
 
     // Check if user is authenticated
     if (!session?.user) {
@@ -24,7 +25,7 @@ export async function GET(
     // Verify campaign ownership
     const campaign = await db.campaign.findUnique({
       where: {
-        id: params.id,
+        id: id,
         brandId: session.user.id,
       },
     });
@@ -43,7 +44,7 @@ export async function GET(
         const contract = await db.contract.findUnique({
           where: {
             negotiationId: negotiationId,
-            campaignId: params.id,
+            campaignId: id,
           },
         });
 
@@ -59,7 +60,7 @@ export async function GET(
         // Get all contracts for the campaign
         const contracts = await db.contract.findMany({
           where: {
-            campaignId: params.id,
+            campaignId: id,
           },
           orderBy: {
             createdAt: "desc",

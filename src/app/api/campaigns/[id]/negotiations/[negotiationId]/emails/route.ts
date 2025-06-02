@@ -4,16 +4,24 @@ import { db } from "@/server/db";
 import { MessageSender } from "@prisma/client";
 import { sendNegotiationEmail } from "@/utils/negotiation-email";
 
+// Define the type for the email request body
+interface EmailRequestBody {
+  subject: string;
+  text: string;
+  html?: string;
+  replyToMessageId?: string;
+}
+
 /**
  * API endpoint for sending emails in a negotiation context
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string; negotiationId: string } },
+  { params }: { params: Promise<{ id: string; negotiationId: string }> },
 ) {
   try {
     const session = await auth();
-    const { id: campaignId, negotiationId } = params;
+    const { id: campaignId, negotiationId } = await params;
 
     // Check authentication
     if (!session?.user) {
@@ -49,7 +57,7 @@ export async function POST(
     }
 
     // Parse the request body
-    const body = await req.json();
+    const body = (await req.json()) as EmailRequestBody;
     const { subject, text, html, replyToMessageId } = body;
 
     // Validate the required fields
@@ -67,7 +75,7 @@ export async function POST(
       text,
       html,
       replyToMessageId,
-      sender: MessageSender.BRAND, // Emails sent through this endpoint are always from the brand
+      sender: MessageSender.BRAND_MANUAL, // Emails sent through this endpoint are always from the brand
     });
 
     if (result.success) {

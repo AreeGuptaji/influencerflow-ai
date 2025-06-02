@@ -11,11 +11,11 @@ const updateModeSchema = z.object({
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string; negotiationId: string } },
+  { params }: { params: Promise<{ id: string; negotiationId: string }> },
 ) {
   try {
     const session = await auth();
-    const { id, negotiationId } = params;
+    const { id, negotiationId } = await params;
 
     // Check authentication
     if (!session?.user) {
