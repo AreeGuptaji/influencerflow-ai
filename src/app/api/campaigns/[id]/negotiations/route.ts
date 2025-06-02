@@ -10,7 +10,8 @@ import { z } from "zod";
 
 // Validation schema for negotiation creation
 const createNegotiationSchema = z.object({
-  creatorEmail: z.string().email(),
+  creatorId: z.string().min(1, "Creator ID is required"),
+  creatorEmail: z.string().email("Valid email is required"),
   parameters: z.object({
     followerCount: z.string().optional(),
     engagementRate: z.string().optional(),
@@ -52,22 +53,22 @@ export async function POST(
 
     // Parse request body
     const body = await request.json();
-    const { creatorId, creatorEmail, parameters, aiMode = "AUTONOMOUS" } = body;
 
-    // Validate required fields
-    if (!creatorId) {
+    // Validate the request body using Zod schema
+    const validationResult = createNegotiationSchema.safeParse(body);
+
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "Creator ID is required" },
+        {
+          error: "Invalid request data",
+          details: validationResult.error.format(),
+        },
         { status: 400 },
       );
     }
 
-    if (!creatorEmail) {
-      return NextResponse.json(
-        { error: "Creator email is required" },
-        { status: 400 },
-      );
-    }
+    const { creatorId, creatorEmail, parameters, aiMode } =
+      validationResult.data;
 
     // Check if negotiation already exists for this campaign and creator
     const existingNegotiation = await db.negotiation.findFirst({
@@ -94,7 +95,7 @@ export async function POST(
         creatorId,
         creatorEmail,
         status: NegotiationStatus.PENDING_OUTREACH,
-        aiMode: aiMode as AIMode,
+        aiMode,
         parameters: parameters || {},
       },
     });

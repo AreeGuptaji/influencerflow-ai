@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+
+// Add type declaration for uuid if needed
+declare module "uuid" {
+  export function v4(): string;
+}
 
 interface NegotiationResponse {
   creatorId: string;
@@ -55,6 +61,8 @@ export default function NegotiationStartModal({
     }
 
     try {
+      const creatorId = uuidv4();
+
       const response = await fetch(
         `/api/campaigns/${campaignId}/negotiations`,
         {
@@ -63,16 +71,22 @@ export default function NegotiationStartModal({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            creatorId,
             creatorEmail,
             parameters,
-            aiMode: "AUTONOMOUS", // Default to autonomous mode
+            aiMode: "AUTONOMOUS",
           }),
         },
       );
 
       if (!response.ok) {
-        const errorData = (await response.json()) as { message?: string };
-        throw new Error(errorData.message ?? "Failed to start negotiation");
+        const errorData = (await response.json()) as {
+          message?: string;
+          error?: string;
+        };
+        throw new Error(
+          errorData.message || errorData.error || "Failed to start negotiation",
+        );
       }
 
       const data = (await response.json()) as NegotiationResponse;
