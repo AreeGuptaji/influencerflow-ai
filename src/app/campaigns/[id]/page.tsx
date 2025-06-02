@@ -206,12 +206,12 @@ export default async function CampaignDetailPage({
             </span>
           </div>
           <div>
-            <Link
+            {/* <Link
               href={`/campaigns/${campaign.id}/edit`}
               className="mr-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Edit Campaign
-            </Link>
+            </Link> */}
             {campaign.status === "DRAFT" ? (
               <form
                 action={`/api/campaigns/${campaign.id}/status`}
