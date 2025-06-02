@@ -70,10 +70,19 @@ export default function ContractSignPage({
 
   // Sign the contract
   const signContract = async () => {
-    if (!contract || !creatorName || !creatorEmail) return;
-
     setSigning(true);
+    setError(""); // Clear any previous errors
+
     try {
+      console.log("Submitting contract signing with data:", {
+        creatorName,
+        creatorEmail,
+        bankDetails: {
+          accountNumber,
+          ifscCode,
+        },
+      });
+
       const response = await fetch(`/api/contracts/${params.id}/sign`, {
         method: "POST",
         headers: {
@@ -89,13 +98,29 @@ export default function ContractSignPage({
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Error signing contract: ${response.statusText}`);
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (parseError) {
+        console.error("Error parsing response:", parseError);
+        throw new Error(`Error parsing response: ${response.statusText}`);
       }
+
+      if (!response.ok) {
+        // Log error details for debugging
+        console.error("Contract signing error details:", responseData);
+        throw new Error(
+          `Error signing contract: ${responseData?.error || response.statusText}`,
+        );
+      }
+
+      // Log success response for debugging
+      console.log("Contract signing successful:", responseData);
 
       setSigned(true);
       await fetchContract();
     } catch (err) {
+      console.error("Full contract signing error:", err);
       setError(err instanceof Error ? err.message : "Failed to sign contract");
     } finally {
       setSigning(false);

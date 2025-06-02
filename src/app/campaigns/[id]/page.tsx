@@ -205,13 +205,14 @@ export default async function CampaignDetailPage({
               {campaign.status}
             </span>
           </div>
-          <div>
+          <div className="flex gap-2">
             <Link
               href={`/campaigns/${campaign.id}/edit`}
-              className="mr-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Edit Campaign
             </Link>
+
             {campaign.status === "DRAFT" ? (
               <form
                 action={`/api/campaigns/${campaign.id}/status`}
@@ -220,7 +221,7 @@ export default async function CampaignDetailPage({
                 <input type="hidden" name="status" value="ACTIVE" />
                 <button
                   type="submit"
-                  className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                  className="rounded-md border border-green-300 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100"
                 >
                   Launch Campaign
                 </button>
@@ -233,7 +234,7 @@ export default async function CampaignDetailPage({
                 <input type="hidden" name="status" value="PAUSED" />
                 <button
                   type="submit"
-                  className="rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700"
+                  className="rounded-md border border-orange-300 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700 hover:bg-orange-100"
                 >
                   Pause Campaign
                 </button>
@@ -246,12 +247,19 @@ export default async function CampaignDetailPage({
                 <input type="hidden" name="status" value="ACTIVE" />
                 <button
                   type="submit"
-                  className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                  className="rounded-md border border-green-300 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100"
                 >
-                  Resume Campaign
+                  Activate Campaign
                 </button>
               </form>
             )}
+
+            <Link
+              href={`/campaigns/${campaign.id}/payments`}
+              className="rounded-md border border-green-300 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100"
+            >
+              Manage Payments
+            </Link>
           </div>
         </div>
       </div>
@@ -368,7 +376,7 @@ export default async function CampaignDetailPage({
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Selected Creators</h2>
           <Link
-            href={`/campaigns/${campaign.id}/creators`}
+            href={`/campaigns/${id}/creators`}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             Find More Creators
@@ -480,7 +488,7 @@ export default async function CampaignDetailPage({
                     <td className="px-4 py-4 text-sm">
                       {creator.status === "Matched" && (
                         <Link
-                          href={`/campaigns/${campaign.id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}`}
+                          href={`/campaigns/${id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}`}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           Start Negotiation
@@ -488,7 +496,7 @@ export default async function CampaignDetailPage({
                       )}
                       {creator.status === "Negotiating" && (
                         <Link
-                          href={`/campaigns/${campaign.id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}`}
+                          href={`/campaigns/${id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}`}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           View Conversation
@@ -496,7 +504,7 @@ export default async function CampaignDetailPage({
                       )}
                       {creator.status === "Contracted" && (
                         <Link
-                          href={`/campaigns/${campaign.id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}?view=contract`}
+                          href={`/campaigns/${id}/negotiate/${campaign.Negotiation.find((n) => n.creatorId === creator.id)?.id ?? creator.id}?view=contract`}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           View Contract
@@ -517,7 +525,7 @@ export default async function CampaignDetailPage({
               Find and select creators that match your campaign criteria
             </p>
             <Link
-              href={`/campaigns/${campaign.id}/creators`}
+              href={`/campaigns/${id}/creators`}
               className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               Find Creators
@@ -538,7 +546,7 @@ export default async function CampaignDetailPage({
             </p>
           </div>
           <Link
-            href={`/campaigns/${campaign.id}/voice-settings`}
+            href={`/campaigns/${id}/voice-settings`}
             className="rounded-md bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 font-medium text-white hover:from-blue-600 hover:to-purple-700"
           >
             Configure Voice Negotiation
@@ -547,7 +555,7 @@ export default async function CampaignDetailPage({
       </div>
 
       {/* This will be a client component for starting negotiations with new creators */}
-      <NegotiationStartModal campaignId={campaign.id} />
+      <NegotiationStartModal campaignId={id} />
     </div>
   );
 }

@@ -38,6 +38,11 @@ export const env = createEnv({
 
     // Email webhook configuration
     EMAIL_WEBHOOK_SECRET: z.string().optional(),
+
+    // Stripe Configuration
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    STRIPE_CONNECT_CLIENT_ID: z.string().optional(),
   },
 
   client: {
@@ -69,6 +74,11 @@ export const env = createEnv({
 
     // Email webhook secret
     EMAIL_WEBHOOK_SECRET: process.env.EMAIL_WEBHOOK_SECRET,
+
+    // Stripe environment variables
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    STRIPE_CONNECT_CLIENT_ID: process.env.STRIPE_CONNECT_CLIENT_ID,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

@@ -10,16 +10,14 @@ The payment processing system will handle financial transactions between brands 
 2. As a brand, I want to set up milestone-based payments tied to deliverables
 3. As a brand, I want to view payment history and transaction status
 4. As a brand, I want to receive invoices and payment receipts
-5. As a brand, I want to manage payment methods and billing information
 
 ## Technical Implementation
 
 ### Payment Flow
 
 1. Brand sets up campaign budget → Allocates funds to creators
-2. Brand approves contract → Initial deposit processing
-3. Creator completes milestones → Milestone payment triggers
-4. Campaign completion → Final payment processing
+2. Brand approves contract → Amount from the Budget is locked up for the creator
+3. Brand marks done on the deliverables → Amount is transferred to the creator's bank account details which was taken through the contract
 
 ### Components
 

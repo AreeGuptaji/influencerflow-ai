@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 import Link from "next/link";
 import { TRPCReactProvider } from "@/trpc/react";
 import { auth } from "@/server/auth";
+import { ToastProvider } from "@/components/ui/toast";
 
 export const metadata: Metadata = {
   title: "InfluencerFlow AI",
@@ -67,16 +68,23 @@ async function NavBar() {
   );
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className={`${geist.variable}`}>
-      <body>
-        <TRPCReactProvider>
-          <NavBar />
-          {children}
-        </TRPCReactProvider>
+      <body className={`font-sans ${geist.variable}`}>
+        <ToastProvider>
+          <TRPCReactProvider>
+            <div className="flex min-h-screen flex-col">
+              {/* @ts-expect-error Async Component */}
+              <NavBar />
+              <main className="flex-1">{children}</main>
+            </div>
+          </TRPCReactProvider>
+        </ToastProvider>
       </body>
     </html>
   );
